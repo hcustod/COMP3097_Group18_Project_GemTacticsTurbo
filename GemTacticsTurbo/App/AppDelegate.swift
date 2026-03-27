@@ -5,7 +5,6 @@
 //  Created by Henrique Custodio on 3/26/26.
 //
 
-import FirebaseCore
 import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
@@ -13,16 +12,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        let hasFirebaseConfiguration = Bundle.main.path(
-            forResource: "GoogleService-Info",
-            ofType: "plist"
-        ) != nil
-
-        if !isRunningTests, hasFirebaseConfiguration, FirebaseApp.app() == nil {
-            FirebaseApp.configure()
-        }
-
+        FirebaseRuntime.configureIfAvailable()
         return true
     }
 }

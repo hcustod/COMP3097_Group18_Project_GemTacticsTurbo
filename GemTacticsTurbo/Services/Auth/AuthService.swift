@@ -7,7 +7,6 @@
 
 import Combine
 import FirebaseAuth
-import FirebaseCore
 import Foundation
 
 final class AuthService {
@@ -26,7 +25,7 @@ final class AuthService {
         auth: Auth? = nil,
         defaults: UserDefaults = .standard
     ) {
-        let resolvedAuth = auth ?? (FirebaseApp.app() != nil ? Auth.auth() : nil)
+        let resolvedAuth = auth ?? (FirebaseRuntime.isConfigured ? Auth.auth() : nil)
         self.auth = resolvedAuth
         self.defaults = defaults
         let initialUser: AuthUser?
@@ -180,7 +179,7 @@ final class AuthService {
     }
 
     var isRemoteAuthAvailable: Bool {
-        auth != nil
+        FirebaseRuntime.isConfigured && auth != nil
     }
 
     func observeAuthState() -> AnyPublisher<AuthUser?, Never> {

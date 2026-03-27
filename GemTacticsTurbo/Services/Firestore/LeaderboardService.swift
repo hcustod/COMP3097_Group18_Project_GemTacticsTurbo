@@ -5,7 +5,6 @@
 //  Created by Henrique Custodio on 3/26/26.
 //
 
-import FirebaseCore
 import FirebaseFirestore
 import Foundation
 
@@ -22,7 +21,7 @@ final class LeaderboardService {
         database: Firestore? = nil,
         defaults: UserDefaults = .standard
     ) {
-        self.database = database ?? (FirebaseApp.app() != nil ? Firestore.firestore() : nil)
+        self.database = database ?? (FirebaseRuntime.isConfigured ? Firestore.firestore() : nil)
         self.defaults = defaults
     }
 

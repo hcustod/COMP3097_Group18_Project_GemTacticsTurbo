@@ -98,17 +98,24 @@ final class AppRouter: ObservableObject {
     }
 
     func applyAuthState(_ user: AuthUser?) {
-        authPath.removeAll()
-        mainPath.removeAll()
+        let newRootState: RootState
 
         switch user {
         case .some(let authUser) where authUser.isGuest:
-            rootState = .guest
+            newRootState = .guest
         case .some:
-            rootState = .authenticated
+            newRootState = .authenticated
         case .none:
-            rootState = .unauthenticated
+            newRootState = .unauthenticated
         }
+
+        guard rootState != newRootState else {
+            return
+        }
+
+        authPath.removeAll()
+        mainPath.removeAll()
+        rootState = newRootState
     }
 
     func signOut() {

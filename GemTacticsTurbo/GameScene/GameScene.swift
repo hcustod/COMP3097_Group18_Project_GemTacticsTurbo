@@ -25,6 +25,7 @@ final class GameScene: SKScene {
     private let boardNode = SKNode()
     private let tileLayer = SKNode()
     private let gemLayer = SKNode()
+    private var boardBackgroundNode: SKShapeNode?
     private var currentBoard: GameSession.Board = GameSession.emptyBoard()
     private var tileNodes: [BoardPosition: SKShapeNode] = [:]
     private var gemNodes: [BoardPosition: SKNode] = [:]
@@ -52,9 +53,7 @@ final class GameScene: SKScene {
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
         tileLayer.zPosition = 0
         gemLayer.zPosition = 1
-        addChild(boardNode)
-        boardNode.addChild(tileLayer)
-        boardNode.addChild(gemLayer)
+        configureSceneGraph()
     }
 
     @available(*, unavailable)
@@ -168,8 +167,11 @@ final class GameScene: SKScene {
     }
 
     private func rebuildBoard() {
+        configureSceneGraph()
         tileLayer.removeAllChildren()
         gemLayer.removeAllChildren()
+        boardBackgroundNode?.removeFromParent()
+        boardBackgroundNode = nil
         tileNodes = [:]
         gemNodes = [:]
 
@@ -191,10 +193,6 @@ final class GameScene: SKScene {
         boardRows = rows
         boardColumns = columns
 
-        boardNode.removeAllChildren()
-        boardNode.addChild(tileLayer)
-        boardNode.addChild(gemLayer)
-
         let boardBackground = SKShapeNode(
             rectOf: CGSize(width: boardWidth + 18, height: boardHeight + 18),
             cornerRadius: Layout.boardCornerRadius
@@ -204,6 +202,7 @@ final class GameScene: SKScene {
         boardBackground.lineWidth = 2
         boardBackground.glowWidth = 1.5
         boardBackground.zPosition = -1
+        boardBackgroundNode = boardBackground
         boardNode.addChild(boardBackground)
 
         for row in 0..<rows {
@@ -226,6 +225,22 @@ final class GameScene: SKScene {
         }
 
         updateSelectionAppearance()
+    }
+
+    private func configureSceneGraph() {
+        if boardNode.parent == nil {
+            addChild(boardNode)
+        }
+
+        if tileLayer.parent !== boardNode {
+            tileLayer.removeFromParent()
+            boardNode.addChild(tileLayer)
+        }
+
+        if gemLayer.parent !== boardNode {
+            gemLayer.removeFromParent()
+            boardNode.addChild(gemLayer)
+        }
     }
 
     private func pointForPosition(_ position: BoardPosition) -> CGPoint {

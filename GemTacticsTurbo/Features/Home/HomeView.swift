@@ -27,9 +27,7 @@ struct HomeView: View {
             StatCard(
                 title: "Session",
                 value: router.isGuest ? "Guest Mode" : "Signed In",
-                detail: router.isGuest
-                    ? "This session was created with Firebase anonymous authentication."
-                    : "This session was created through the email authentication flow."
+                detail: sessionDetail
             )
 
             if let signOutErrorMessage {
@@ -97,5 +95,17 @@ struct HomeView: View {
         }
 
         return authService.isRemoteAuthAvailable ? "Sign Out" : "End Local Session"
+    }
+
+    private var sessionDetail: String {
+        if router.isGuest && !authService.isRemoteAuthAvailable {
+            return "This session was created locally so the app can run without Firebase setup."
+        }
+
+        if router.isGuest {
+            return "This session was created with Firebase anonymous authentication."
+        }
+
+        return "This session was created through the email authentication flow."
     }
 }
