@@ -6,11 +6,18 @@ struct HomeView: View {
     @State private var signOutErrorMessage: String?
 
     private let authService = AuthService.shared
+    private var sessionPresentation: AuthSessionPresentation {
+        AuthSessionPresentation.make(
+            isGuest: router.isGuest,
+            isRemoteAuthAvailable: authService.isRemoteAuthAvailable,
+            isSigningOut: isSigningOut
+        )
+    }
 
     var body: some View {
         ScreenContainer(
             title: "Gem Tactics Turbo",
-            subtitle: homeSubtitle
+            subtitle: sessionPresentation.homeSubtitle
         ) {
             VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
                 GlassPanel(elevated: true) {
@@ -28,10 +35,10 @@ struct HomeView: View {
                             Text("SESSION")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textMuted)
-                            Text(router.isGuest ? "Guest Mode" : "Signed In")
+                            Text(sessionPresentation.sessionStatusTitle)
                                 .font(AppTypography.bodyStrong)
                                 .foregroundStyle(AppColors.textPrimary)
-                            Text(sessionDetail)
+                            Text(sessionPresentation.sessionDetail)
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textTertiary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -66,7 +73,7 @@ struct HomeView: View {
                             router.show(.settings)
                         }
 
-                        SecondaryButton(title: signOutButtonTitle) {
+                        SecondaryButton(title: sessionPresentation.signOutButtonTitle) {
                             signOut()
                         }
                         .disabled(isSigningOut)
@@ -90,35 +97,4 @@ struct HomeView: View {
         }
     }
 
-    private var homeSubtitle: String {
-        if router.isGuest && !authService.isRemoteAuthAvailable {
-            return "Local guest mode is active. You can play rounds, store guest stats, and review an on-device leaderboard from here."
-        }
-
-        if router.isGuest {
-            return "Guest access is active through anonymous authentication. You can play, save scores, and keep local guest stats from here."
-        }
-
-        return "Authenticated access is active through email sign-in. Use Home as the main hub for gameplay, profile, leaderboard, and settings."
-    }
-
-    private var signOutButtonTitle: String {
-        if isSigningOut {
-            return authService.isRemoteAuthAvailable ? "Signing Out..." : "Ending Session..."
-        }
-
-        return authService.isRemoteAuthAvailable ? "Sign Out" : "End Local Session"
-    }
-
-    private var sessionDetail: String {
-        if router.isGuest && !authService.isRemoteAuthAvailable {
-            return "This session was created locally so the app can run without Firebase setup."
-        }
-
-        if router.isGuest {
-            return "This session was created with Firebase anonymous authentication."
-        }
-
-        return "This session was created through the email authentication flow."
-    }
 }
