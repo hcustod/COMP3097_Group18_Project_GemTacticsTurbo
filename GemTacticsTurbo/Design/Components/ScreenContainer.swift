@@ -1,10 +1,3 @@
-//
-//  ScreenContainer.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct ScreenContainer<Content: View>: View {
@@ -44,8 +37,8 @@ struct ScreenContainer<Content: View>: View {
                     content
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.screenHorizontal)
-                .padding(.vertical, AppSpacing.screenVertical)
+                .padding(.horizontal, AppSpacing.pagePadding)
+                .padding(.vertical, AppSpacing.pagePadding)
             }
         }
     }

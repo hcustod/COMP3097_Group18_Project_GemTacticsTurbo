@@ -2,8 +2,6 @@
 //  AppSpacing.swift
 //  GemTacticsTurbo
 //
-//  Created by Henrique Custodio on 3/26/26.
-//
 
 import SwiftUI
 
@@ -18,4 +16,21 @@ enum AppSpacing {
     static let cardPadding: CGFloat = 20
     static let cornerRadius: CGFloat = 20
     static let buttonHeight: CGFloat = 54
+
+    static let pagePadding: CGFloat = 24
+    static let pagePaddingCompact: CGFloat = 16
+    static let sectionSpacing: CGFloat = 32
+    static let stackStandard: CGFloat = 16
+    static let stackTight: CGFloat = 12
+    static let cardPaddingLarge: CGFloat = 24
+    static let cardPaddingModal: CGFloat = 32
+
+    static let buttonPaddingVertical: CGFloat = 14
+    static let buttonPaddingHorizontal: CGFloat = 24
+    static let iconButtonSize: CGFloat = 40
+
+    static let radiusInput: CGFloat = 14
+    static let radiusCard: CGFloat = 20
+    static let radiusPanel: CGFloat = 24
+    static let radiusFull: CGFloat = 9999
 }
