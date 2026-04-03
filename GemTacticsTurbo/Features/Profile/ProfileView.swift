@@ -1,10 +1,3 @@
-//
-//  ProfileView.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct ProfileView: View {
@@ -18,15 +11,25 @@ struct ProfileView: View {
                 ? "Guest stats are stored locally for the current anonymous session."
                 : "Completed games now update your Firestore-backed profile stats automatically."
         ) {
-            SectionHeader(
-                title: "Overview",
-                subtitle: sectionSubtitle
-            )
+            VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
+                GlassPanel(elevated: true) {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Overview")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-            profileContent
+                        Text(sectionSubtitle)
+                            .font(AppTypography.label)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-            SecondaryButton(title: "Back to Home") {
-                router.show(.home)
+                        profileContent
+                    }
+                }
+
+                SecondaryButton(title: "Back to Home") {
+                    router.show(.home)
+                }
             }
         }
         .navigationTitle("Profile")
@@ -39,11 +42,18 @@ struct ProfileView: View {
     @ViewBuilder
     private var profileContent: some View {
         if viewModel.isLoading {
-            StatCard(
-                title: "Status",
-                value: "Loading",
-                detail: "Fetching the current profile data."
-            )
+            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                Text("STATUS")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textMuted)
+                Text("Loading")
+                    .font(AppTypography.bodyStrong)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("Fetching the current profile data.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             ProgressView()
                 .tint(AppColors.accentPrimary)
@@ -51,41 +61,42 @@ struct ProfileView: View {
         } else if let errorMessage = viewModel.errorMessage {
             InlineStatusMessage(message: errorMessage)
         } else if let profile = viewModel.profile {
-            VStack(spacing: AppSpacing.medium) {
-                StatCard(
-                    title: "Display Name",
+            VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                ProfileStatBlock(
+                    overline: "Display Name",
                     value: profile.displayName,
-                    detail: profile.email ?? (profile.isGuest ? "Guest sessions do not store an email address." : "No email address is available.")
+                    detail: profile.email
+                        ?? (profile.isGuest ? "Guest sessions do not store an email address." : "No email address is available.")
                 )
 
-                StatCard(
-                    title: "Avatar",
+                ProfileStatBlock(
+                    overline: "Avatar",
                     value: profile.avatarName,
                     detail: profile.isGuest
                         ? "Guest sessions use the local guest avatar style for this MVP build."
                         : "Avatar selection is static in the MVP build."
                 )
 
-                StatCard(
-                    title: "Games Played",
+                ProfileStatBlock(
+                    overline: "Games Played",
                     value: "\(profile.gamesPlayed)",
                     detail: "Average score: \(profile.averageScore.formatted())"
                 )
 
-                StatCard(
-                    title: "Highest Score",
+                ProfileStatBlock(
+                    overline: "Highest Score",
                     value: "\(profile.highestScore)",
                     detail: "Unlocked difficulty: \(profile.unlockedDifficulty.capitalized)"
                 )
 
-                StatCard(
-                    title: "Total Score",
+                ProfileStatBlock(
+                    overline: "Total Score",
                     value: profile.totalScore.formatted(),
                     detail: "Cumulative score across all completed rounds."
                 )
 
-                StatCard(
-                    title: "Match Groups",
+                ProfileStatBlock(
+                    overline: "Match Groups",
                     value: "\(profile.totalMatches)",
                     detail: "MVP total matches count every resolved match group across cascade steps."
                 )
@@ -115,5 +126,28 @@ struct ProfileView: View {
         }
 
         return "Registered accounts show the latest saved stats from Firestore."
+    }
+}
+
+private struct ProfileStatBlock: View {
+    let overline: String
+    let value: String
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+            Text(overline.uppercased())
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.textMuted)
+            Text(value)
+                .font(AppTypography.bodyStrong)
+                .foregroundStyle(AppColors.textPrimary)
+            Text(detail)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, AppSpacing.xSmall)
     }
 }

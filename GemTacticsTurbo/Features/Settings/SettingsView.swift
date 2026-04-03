@@ -1,10 +1,3 @@
-//
-//  SettingsView.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
@@ -22,67 +15,105 @@ struct SettingsView: View {
                 ? "Preferences persist locally on this device, while account actions stay tied to the current auth session."
                 : "Preferences and guest-session testing both run locally in this build."
         ) {
-            SectionHeader(
-                title: "Preferences",
-                subtitle: "Audio and feedback toggles are stored locally with UserDefaults-backed settings."
-            )
+            VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
+                GlassPanel {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Preferences")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-            VStack(spacing: AppSpacing.medium) {
-                SettingsToggleRow(
-                    title: "Sound Effects",
-                    detail: "Controls gem swap and game event sound cues.",
-                    isOn: $settingsStore.soundEnabled
-                )
+                        Text("Audio and feedback toggles are stored locally with UserDefaults-backed settings.")
+                            .font(AppTypography.label)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                SettingsToggleRow(
-                    title: "Music",
-                    detail: "Keeps the background soundtrack enabled in the MVP build.",
-                    isOn: $settingsStore.musicEnabled
-                )
+                        VStack(spacing: 0) {
+                            SettingsToggleRow(
+                                title: "Sound Effects",
+                                detail: "Controls gem swap and game event sound cues.",
+                                isOn: $settingsStore.soundEnabled
+                            )
 
-                SettingsToggleRow(
-                    title: "Haptics",
-                    detail: "Enables tactile feedback for supported devices.",
-                    isOn: $settingsStore.hapticsEnabled
-                )
-            }
+                            Divider()
+                                .background(AppColors.glassBorder.opacity(0.5))
+                                .padding(.vertical, AppSpacing.xSmall)
 
-            SectionHeader(
-                title: "Account",
-                subtitle: router.isGuest
-                    ? "Guest sessions can sign out, but they do not expose permanent account deletion."
-                    : "Registered accounts can sign out or permanently delete the current account."
-            )
+                            SettingsToggleRow(
+                                title: "Music",
+                                detail: "Keeps the background soundtrack enabled in the MVP build.",
+                                isOn: $settingsStore.musicEnabled
+                            )
 
-            StatCard(
-                title: "Current Session",
-                value: router.isGuest ? "Guest Session" : "Registered Session",
-                detail: router.isGuest
-                    ? "Anonymous authentication keeps leaderboard access simple without a permanent profile."
-                    : "This account can load profile stats, save scores, and be deleted from Firebase Auth."
-            )
+                            Divider()
+                                .background(AppColors.glassBorder.opacity(0.5))
+                                .padding(.vertical, AppSpacing.xSmall)
 
-            if let signOutErrorMessage {
-                InlineStatusMessage(message: signOutErrorMessage)
-            }
-
-            VStack(spacing: AppSpacing.medium) {
-                if router.isGuest {
-                    InlineStatusMessage(message: "Guest sessions do not offer account deletion. Sign out to end the current session.")
-                } else {
-                    PrimaryButton(title: "Delete Account") {
-                        router.show(.deleteAccount)
+                            SettingsToggleRow(
+                                title: "Haptics",
+                                detail: "Enables tactile feedback for supported devices.",
+                                isOn: $settingsStore.hapticsEnabled
+                            )
+                        }
                     }
                 }
 
-                SecondaryButton(title: "Back to Home") {
-                    router.show(.home)
-                }
+                GlassPanel(elevated: true) {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Account")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-                SecondaryButton(title: signOutButtonTitle) {
-                    signOut()
+                        Text(
+                            router.isGuest
+                                ? "Guest sessions can sign out, but they do not expose permanent account deletion."
+                                : "Registered accounts can sign out or permanently delete the current account."
+                        )
+                        .font(AppTypography.label)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                            Text("CURRENT SESSION")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.textMuted)
+                            Text(router.isGuest ? "Guest Session" : "Registered Session")
+                                .font(AppTypography.bodyStrong)
+                                .foregroundStyle(AppColors.textPrimary)
+                            Text(
+                                router.isGuest
+                                    ? "Anonymous authentication keeps leaderboard access simple without a permanent profile."
+                                    : "This account can load profile stats, save scores, and be deleted from Firebase Auth."
+                            )
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.vertical, AppSpacing.xSmall)
+
+                        if let signOutErrorMessage {
+                            InlineStatusMessage(message: signOutErrorMessage)
+                        }
+
+                        VStack(spacing: AppSpacing.stackTight) {
+                            if router.isGuest {
+                                InlineStatusMessage(message: "Guest sessions do not offer account deletion. Sign out to end the current session.")
+                            } else {
+                                PrimaryButton(title: "Delete Account") {
+                                    router.show(.deleteAccount)
+                                }
+                            }
+
+                            SecondaryButton(title: "Back to Home") {
+                                router.show(.home)
+                            }
+
+                            SecondaryButton(title: signOutButtonTitle) {
+                                signOut()
+                            }
+                            .disabled(isSigningOut)
+                        }
+                    }
                 }
-                .disabled(isSigningOut)
             }
         }
         .navigationTitle("Settings")
@@ -116,26 +147,18 @@ private struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Toggle(isOn: $isOn) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(AppTypography.bodyStrong)
-                        .foregroundStyle(AppColors.textPrimary)
+        Toggle(isOn: $isOn) {
+            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                Text(title)
+                    .font(AppTypography.bodyStrong)
+                    .foregroundStyle(AppColors.textPrimary)
 
-                    Text(detail)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.textSecondary)
-                }
+                Text(detail)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
             }
-            .tint(AppColors.accentPrimary)
         }
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                .stroke(AppColors.stroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
+        .tint(AppColors.accentPrimary)
+        .padding(.vertical, AppSpacing.xSmall)
     }
 }
