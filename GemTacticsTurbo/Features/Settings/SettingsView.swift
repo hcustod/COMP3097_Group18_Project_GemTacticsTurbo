@@ -16,50 +16,32 @@ struct SettingsView: View {
     private let authService = AuthService.shared
 
     var body: some View {
-        ScreenContainer(
-            title: "Settings",
-            subtitle: authService.isRemoteAuthAvailable
-                ? "Preferences persist locally on this device, while account actions stay tied to the current auth session."
-                : "Preferences and guest-session testing both run locally in this build."
-        ) {
-            SectionHeader(
-                title: "Preferences",
-                subtitle: "Audio and feedback toggles are stored locally with UserDefaults-backed settings."
-            )
+        ScreenContainer(title: "Settings") {
+            SectionHeader(title: "Preferences")
 
             VStack(spacing: AppSpacing.medium) {
                 SettingsToggleRow(
                     title: "Sound Effects",
-                    detail: "Controls gem swap and game event sound cues.",
                     isOn: $settingsStore.soundEnabled
                 )
 
                 SettingsToggleRow(
                     title: "Music",
-                    detail: "Keeps the background soundtrack enabled in the MVP build.",
                     isOn: $settingsStore.musicEnabled
                 )
 
                 SettingsToggleRow(
                     title: "Haptics",
-                    detail: "Enables tactile feedback for supported devices.",
                     isOn: $settingsStore.hapticsEnabled
                 )
             }
 
-            SectionHeader(
-                title: "Account",
-                subtitle: router.isGuest
-                    ? "Guest sessions can sign out, but they do not expose permanent account deletion."
-                    : "Registered accounts can sign out or permanently delete the current account."
-            )
+            SectionHeader(title: "Session")
 
             StatCard(
-                title: "Current Session",
+                title: "Current",
                 value: router.isGuest ? "Guest Session" : "Registered Session",
-                detail: router.isGuest
-                    ? "Anonymous authentication keeps leaderboard access simple without a permanent profile."
-                    : "This account can load profile stats, save scores, and be deleted from Firebase Auth."
+                detail: nil
             )
 
             if let signOutErrorMessage {
@@ -67,9 +49,7 @@ struct SettingsView: View {
             }
 
             VStack(spacing: AppSpacing.medium) {
-                if router.isGuest {
-                    InlineStatusMessage(message: "Guest sessions do not offer account deletion. Sign out to end the current session.")
-                } else {
+                if !router.isGuest {
                     PrimaryButton(title: "Delete Account") {
                         router.show(.deleteAccount)
                     }
@@ -112,7 +92,6 @@ struct SettingsView: View {
 
 private struct SettingsToggleRow: View {
     let title: String
-    let detail: String
     @Binding var isOn: Bool
 
     var body: some View {
@@ -122,10 +101,6 @@ private struct SettingsToggleRow: View {
                     Text(title)
                         .font(AppTypography.bodyStrong)
                         .foregroundStyle(AppColors.textPrimary)
-
-                    Text(detail)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.textSecondary)
                 }
             }
             .tint(AppColors.accentPrimary)

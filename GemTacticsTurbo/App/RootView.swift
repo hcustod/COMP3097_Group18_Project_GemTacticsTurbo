@@ -9,6 +9,7 @@ import SwiftUI
 
 struct RootView: View {
     @StateObject private var router = AppRouter()
+    @State private var hasBootstrappedSession = false
     private let authService = AuthService.shared
 
     var body: some View {
@@ -25,37 +26,39 @@ struct RootView: View {
         .tint(AppColors.accentPrimary)
         .preferredColorScheme(.dark)
         .task {
-            if let currentUser = authService.getCurrentUser() {
-                router.applyAuthState(currentUser)
+            guard !hasBootstrappedSession else {
                 return
             }
 
-            if !authService.isRemoteAuthAvailable {
-                _ = try? await authService.signInAnonymously()
-                return
-            }
-
-            router.applyAuthState(nil)
+            hasBootstrappedSession = true
+            await bootstrapSession()
         }
         .onReceive(authService.observeAuthState()) { user in
             router.applyAuthState(user)
         }
     }
+
+    private func bootstrapSession() async {
+        if let currentUser = authService.getCurrentUser() {
+            router.applyAuthState(currentUser)
+            return
+        }
+
+        if !authService.isRemoteAuthAvailable {
+            _ = try? await authService.signInAnonymously()
+            return
+        }
+
+        router.applyAuthState(nil)
+    }
 }
 
 private struct LaunchingPlaceholderView: View {
     var body: some View {
-        ScreenContainer(
-            title: "Gem Tactics Turbo",
-            subtitle: "Checking the current session and preparing the app flow."
-        ) {
-            SectionHeader(
-                title: "Launching",
-                subtitle: "Local builds without Firebase configuration now fall straight into guest play so the full MVP remains usable in Xcode."
-            )
-
+        ScreenContainer(title: "Gem Tactics Turbo") {
             ProgressView()
                 .tint(AppColors.accentPrimary)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .navigationTitle("Launching")
         .navigationBarTitleDisplayMode(.inline)

@@ -15,19 +15,13 @@ struct HomeView: View {
     private let authService = AuthService.shared
 
     var body: some View {
-        ScreenContainer(
-            title: "Gem Tactics Turbo",
-            subtitle: homeSubtitle
-        ) {
-            SectionHeader(
-                title: "Home",
-                subtitle: "Jump into a round, review your stats, or manage the current session."
-            )
+        ScreenContainer(title: "Gem Tactics Turbo") {
+            SectionHeader(title: "Play")
 
             StatCard(
                 title: "Session",
                 value: router.isGuest ? "Guest Mode" : "Signed In",
-                detail: sessionDetail
+                detail: nil
             )
 
             if let signOutErrorMessage {
@@ -77,35 +71,11 @@ struct HomeView: View {
         }
     }
 
-    private var homeSubtitle: String {
-        if router.isGuest && !authService.isRemoteAuthAvailable {
-            return "Local guest mode is active. You can play rounds, store guest stats, and review an on-device leaderboard from here."
-        }
-
-        if router.isGuest {
-            return "Guest access is active through anonymous authentication. You can play, save scores, and keep local guest stats from here."
-        }
-
-        return "Authenticated access is active through email sign-in. Use Home as the main hub for gameplay, profile, leaderboard, and settings."
-    }
-
     private var signOutButtonTitle: String {
         if isSigningOut {
             return authService.isRemoteAuthAvailable ? "Signing Out..." : "Ending Session..."
         }
 
         return authService.isRemoteAuthAvailable ? "Sign Out" : "End Local Session"
-    }
-
-    private var sessionDetail: String {
-        if router.isGuest && !authService.isRemoteAuthAvailable {
-            return "This session was created locally so the app can run without Firebase setup."
-        }
-
-        if router.isGuest {
-            return "This session was created with Firebase anonymous authentication."
-        }
-
-        return "This session was created through the email authentication flow."
     }
 }

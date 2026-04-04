@@ -19,7 +19,7 @@ struct SectionHeader: View {
 
             if let subtitle {
                 Text(subtitle)
-                    .font(AppTypography.body)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textSecondary)
             }
         }

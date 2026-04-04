@@ -12,34 +12,22 @@ struct DeleteAccountView: View {
     @StateObject private var viewModel = DeleteAccountViewModel()
 
     var body: some View {
-        ScreenContainer(
-            title: "Delete Account",
-            subtitle: router.isGuest
-                ? "Guest sessions do not have a permanent account to delete."
-                : "This action permanently removes the current Firebase-authenticated account."
-        ) {
-            SectionHeader(
-                title: "Warning",
-                subtitle: router.isGuest
-                    ? "You can leave guest mode by signing out."
-                    : "For safety, type DELETE before continuing. Firebase may require you to sign in again if the session is too old."
-            )
+        ScreenContainer(title: "Delete Account") {
+            SectionHeader(title: router.isGuest ? "Guest Session" : "Type DELETE")
 
             if router.isGuest {
                 StatCard(
-                    title: "Guest Session",
-                    value: "No Deletion Needed",
-                    detail: "Anonymous sessions can simply sign out from Settings."
+                    title: "Guest",
+                    value: "No Account"
                 )
             } else {
                 StatCard(
-                    title: "Confirmation",
-                    value: "Type DELETE",
-                    detail: "Account deletion removes the authentication account and returns you to the login flow."
+                    title: "Confirm",
+                    value: "DELETE"
                 )
 
                 VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text("Confirmation Text")
+                    Text("Enter DELETE")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textMuted)
 

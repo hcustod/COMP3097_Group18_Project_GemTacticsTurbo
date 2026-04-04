@@ -12,26 +12,8 @@ struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
 
     var body: some View {
-        ScreenContainer(
-            title: "Gem Tactics Turbo",
-            subtitle: viewModel.isLocalOnlyMode
-                ? "This local build is ready to play without backend setup. Continue as guest to use the full MVP flow."
-                : "Sign in with email for a full account, or start an anonymous guest session for MVP play."
-        ) {
-            SectionHeader(
-                title: viewModel.isLocalOnlyMode ? "Local Play" : "Login",
-                subtitle: viewModel.isLocalOnlyMode
-                    ? "Firebase is not configured in this build, so the app uses a local guest path for gameplay, stats, and leaderboard testing."
-                    : "Email sign-in and anonymous guest access both route through the live authentication service."
-            )
-
-            StatCard(
-                title: "MVP Access",
-                value: viewModel.isLocalOnlyMode ? "Local Guest Mode" : "Email + Guest",
-                detail: viewModel.isLocalOnlyMode
-                    ? "Gameplay, profile stats, and leaderboard testing can all run locally through the guest session."
-                    : "Registered users sign in with email, and guests use anonymous authentication."
-            )
+        ScreenContainer(title: "Gem Tactics Turbo") {
+            SectionHeader(title: viewModel.isLocalOnlyMode ? "Tap To Start" : "Login")
 
             if let errorMessage = viewModel.errorMessage {
                 InlineStatusMessage(message: errorMessage)

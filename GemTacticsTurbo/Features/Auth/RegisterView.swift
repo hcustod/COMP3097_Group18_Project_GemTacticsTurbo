@@ -12,20 +12,8 @@ struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
 
     var body: some View {
-        ScreenContainer(
-            title: "Create Account",
-            subtitle: "Create an email-based account for the MVP and start with a ready-to-use profile record."
-        ) {
-            SectionHeader(
-                title: "Register",
-                subtitle: "The account flow is now live with basic client-side validation and Firebase registration."
-            )
-
-            StatCard(
-                title: "Account Setup",
-                value: "Email Only",
-                detail: "Display name, email, password, and confirmation are required for MVP registration."
-            )
+        ScreenContainer(title: "Create Account") {
+            SectionHeader(title: "Register")
 
             if let errorMessage = viewModel.errorMessage {
                 InlineStatusMessage(message: errorMessage)

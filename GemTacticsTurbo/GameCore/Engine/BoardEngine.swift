@@ -21,12 +21,38 @@ struct BoardEngine: BoardEngineing, Sendable {
         let scoreGained: Int
         let comboChain: Int
         let totalMatchGroups: Int
+        let availableSwapCount: Int
+        let boardWasRepaired: Bool
+        let metPlayabilityThreshold: Bool
+
+        init(
+            board: GameSession.Board,
+            wasValid: Bool,
+            scoreGained: Int,
+            comboChain: Int,
+            totalMatchGroups: Int,
+            availableSwapCount: Int = 0,
+            boardWasRepaired: Bool = false,
+            metPlayabilityThreshold: Bool = true
+        ) {
+            self.board = board
+            self.wasValid = wasValid
+            self.scoreGained = scoreGained
+            self.comboChain = comboChain
+            self.totalMatchGroups = totalMatchGroups
+            self.availableSwapCount = availableSwapCount
+            self.boardWasRepaired = boardWasRepaired
+            self.metPlayabilityThreshold = metPlayabilityThreshold
+        }
     }
 
     let rows: Int
     let columns: Int
 
-    init(rows: Int = 8, columns: Int = 8) {
+    init(
+        rows: Int = GameSession.defaultRowCount,
+        columns: Int = GameSession.defaultColumnCount
+    ) {
         self.rows = rows
         self.columns = columns
     }
@@ -55,13 +81,19 @@ struct BoardEngine: BoardEngineing, Sendable {
             board: swappedBoard,
             difficulty: difficulty
         )
+        let playabilityRepair = BoardGenerator.repairPlayability(
+            for: cascadeResult.board
+        )
 
         return MoveResult(
-            board: cascadeResult.board,
+            board: playabilityRepair.board,
             wasValid: true,
             scoreGained: cascadeResult.totalScore,
             comboChain: cascadeResult.comboChain,
-            totalMatchGroups: cascadeResult.totalMatchGroups
+            totalMatchGroups: cascadeResult.totalMatchGroups,
+            availableSwapCount: playabilityRepair.availableSwapCount,
+            boardWasRepaired: playabilityRepair.wasRepaired,
+            metPlayabilityThreshold: playabilityRepair.metMinimumSwapRequirement
         )
     }
 }

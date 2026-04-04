@@ -28,15 +28,15 @@ struct ScreenContainer<Content: View>: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
+                VStack(alignment: .leading, spacing: AppSpacing.large) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                         Text(title)
                             .font(AppTypography.appTitle)
                             .foregroundStyle(AppColors.textPrimary)
 
                         if let subtitle {
                             Text(subtitle)
-                                .font(AppTypography.body)
+                                .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textSecondary)
                         }
                     }

@@ -32,6 +32,8 @@ final class GameViewModel: ObservableObject {
 
     @Published private(set) var session: GameSession
     @Published private(set) var statusMessage: String
+    @Published private(set) var isPreparingBoard: Bool
+    @Published private(set) var loadingMessage: String?
 
     private let difficulty: Difficulty
     private let boardEngine: any BoardEngineing
@@ -41,6 +43,8 @@ final class GameViewModel: ObservableObject {
     private var timer: Timer?
     private var totalMatchGroupsResolved = 0
     private var hasSubmittedCompletedGame = false
+    private var hasPreparedInitialBoard = false
+    private var boardPreparationRequestID = 0
 
     init(
         difficulty: Difficulty,
@@ -55,8 +59,9 @@ final class GameViewModel: ObservableObject {
         self.profileService = profileService ?? ProfileService()
         self.leaderboardService = leaderboardService ?? LeaderboardService()
         self.session = GameSession(difficulty: difficulty)
-        self.statusMessage = "Tap one gem, then tap an adjacent gem to attempt a swap."
-        startGame()
+        self.statusMessage = "Preparing board..."
+        self.isPreparingBoard = true
+        self.loadingMessage = "Preparing board..."
     }
 
     deinit {
@@ -67,17 +72,52 @@ final class GameViewModel: ObservableObject {
         session.board
     }
 
-    func startGame() {
+    func prepareInitialBoardIfNeeded() async {
+        guard !hasPreparedInitialBoard else {
+            return
+        }
+
+        hasPreparedInitialBoard = true
+        await prepareBoardForNewRound(loadingMessage: "Preparing board...")
+    }
+
+    func restartGame() async {
+        hasPreparedInitialBoard = true
+        await prepareBoardForNewRound(loadingMessage: "Preparing new round...")
+    }
+
+    private func prepareBoardForNewRound(loadingMessage: String) async {
         stopTimer()
+        boardPreparationRequestID += 1
+        let requestID = boardPreparationRequestID
+
+        isPreparingBoard = true
+        self.loadingMessage = loadingMessage
+        statusMessage = loadingMessage
+        session.score = 0
+        session.remainingMoves = difficulty.moveLimit
+        session.remainingTime = difficulty.timeLimit
+        session.comboChain = 0
+        session.isPaused = false
+        session.isGameOver = false
+        session.isWin = false
+        totalMatchGroupsResolved = 0
+        hasSubmittedCompletedGame = false
+
+        await Task.yield()
+        let preparedBoard = boardEngine.makeInitialBoard()
+
+        guard requestID == boardPreparationRequestID else {
+            return
+        }
 
         session = GameSession(
             difficulty: difficulty,
-            board: boardEngine.makeInitialBoard()
+            board: preparedBoard
         )
-        totalMatchGroupsResolved = 0
-        hasSubmittedCompletedGame = false
-        statusMessage = "Tap one gem, then tap a neighboring gem to reach \(session.targetScore) points."
-
+        isPreparingBoard = false
+        self.loadingMessage = nil
+        statusMessage = "Reach \(session.targetScore) points."
         startTimer()
     }
 
@@ -85,7 +125,7 @@ final class GameViewModel: ObservableObject {
     func attemptSwap(from: BoardPosition, to: BoardPosition) -> SwapFeedback {
         let swap = Swap(source: from, destination: to)
 
-        guard session.isActive else {
+        guard session.isActive, !isPreparingBoard else {
             return SwapFeedback(
                 swap: swap,
                 outcome: .ignored,
@@ -101,7 +141,7 @@ final class GameViewModel: ObservableObject {
 
         guard result.wasValid else {
             session.comboChain = 0
-            statusMessage = "Invalid swap. Try an adjacent move that creates a match."
+            statusMessage = "No match."
             return SwapFeedback(
                 swap: swap,
                 outcome: .invalid,
@@ -116,9 +156,9 @@ final class GameViewModel: ObservableObject {
         totalMatchGroupsResolved += result.totalMatchGroups
 
         if result.comboChain > 1 {
-            statusMessage = "Combo x\(result.comboChain) for \(result.scoreGained) points."
+            statusMessage = "Combo x\(result.comboChain)  +\(result.scoreGained)"
         } else {
-            statusMessage = "Valid move for \(result.scoreGained) points."
+            statusMessage = "+\(result.scoreGained) points"
         }
 
         evaluateEndConditions()
@@ -131,41 +171,36 @@ final class GameViewModel: ObservableObject {
     }
 
     func pauseGame() {
-        guard !session.isGameOver else {
+        guard !session.isGameOver, !isPreparingBoard else {
             return
         }
 
         session.isPaused = true
-        statusMessage = "Game paused."
+        statusMessage = "Paused"
     }
 
     func resumeGame() {
-        guard !session.isGameOver else {
+        guard !session.isGameOver, !isPreparingBoard else {
             return
         }
 
         session.isPaused = false
-        statusMessage = "Game resumed."
+        statusMessage = "Go"
     }
-
-    func restartGame() {
-        startGame()
-    }
-
     func processTimerTick() {
-        guard session.isActive else {
+        guard session.isActive, !isPreparingBoard else {
             return
         }
 
         guard session.remainingTime > 0 else {
-            endGame(isWin: false, message: "Time is up.")
+            endGame(isWin: false, message: "Time up")
             return
         }
 
         session.remainingTime -= 1
 
         if session.remainingTime <= 0 {
-            endGame(isWin: false, message: "Time is up.")
+            endGame(isWin: false, message: "Time up")
         }
     }
 
@@ -196,7 +231,7 @@ final class GameViewModel: ObservableObject {
         if session.hasReachedTargetScore {
             endGame(
                 isWin: true,
-                message: "Target score reached."
+                message: "Target reached"
             )
             return
         }
@@ -204,7 +239,7 @@ final class GameViewModel: ObservableObject {
         if session.remainingMoves <= 0 {
             endGame(
                 isWin: false,
-                message: "No moves remaining."
+                message: "No moves left"
             )
         }
     }

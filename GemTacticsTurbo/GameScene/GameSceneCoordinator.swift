@@ -6,6 +6,7 @@
 //
 
 import Combine
+import CoreGraphics
 import Foundation
 
 @MainActor
@@ -18,7 +19,7 @@ final class GameSceneCoordinator: ObservableObject {
     private var pendingBoard: GameSession.Board?
 
     init(board: GameSession.Board? = nil) {
-        let scene = GameScene(size: CGSize(width: 640, height: 640))
+        let scene = GameScene(size: Self.sceneSize(for: board))
         self.scene = scene
         scene.render(board: board ?? GameSession.emptyBoard())
         scene.onSwapRequested = { [weak self] swap in
@@ -96,5 +97,15 @@ final class GameSceneCoordinator: ObservableObject {
 
         self.pendingBoard = nil
         scene.isBoardInteractionEnabled = desiredInteractionState
+    }
+
+    private static func sceneSize(for board: GameSession.Board?) -> CGSize {
+        let rowCount = max(board?.count ?? GameSession.defaultRowCount, 1)
+        let columnCount = max(board?.first?.count ?? GameSession.defaultColumnCount, 1)
+        let baseCell: CGFloat = 140
+        return CGSize(
+            width: CGFloat(columnCount) * baseCell,
+            height: CGFloat(rowCount) * baseCell
+        )
     }
 }

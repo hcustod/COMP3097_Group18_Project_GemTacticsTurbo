@@ -24,10 +24,6 @@ struct GameContainerView: View {
         )
     }
 
-    private var gameSubtitle: String {
-        "SpriteKit now renders the board and handles tile selection, while the view model remains responsible for validating swaps and updating the round."
-    }
-
     private var scoreMultiplierText: String {
         String(format: "%.1f", difficulty.scoreMultiplier)
     }
@@ -36,6 +32,12 @@ struct GameContainerView: View {
         let minutes = viewModel.session.remainingTime / 60
         let seconds = viewModel.session.remainingTime % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var boardAspectRatio: CGFloat {
+        let rowCount = max(viewModel.session.rowCount, 1)
+        let columnCount = max(viewModel.session.columnCount, 1)
+        return CGFloat(columnCount) / CGFloat(rowCount)
     }
 
     private var gameOverTitle: String {
@@ -48,15 +50,7 @@ struct GameContainerView: View {
 
     var body: some View {
         ZStack {
-            ScreenContainer(
-                title: "\(difficulty.displayName) Match",
-                subtitle: gameSubtitle
-            ) {
-                SectionHeader(
-                    title: "HUD",
-                    subtitle: "Pause, timer, score, and move state stay in SwiftUI while the scene handles gem selection and swap attempts."
-                )
-
+            ScreenContainer(title: "\(difficulty.displayName) Match") {
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: AppSpacing.medium),
@@ -85,17 +79,16 @@ struct GameContainerView: View {
                     hudButton
                 }
 
-                SectionHeader(
-                    title: "Board",
-                    subtitle: "Tap one gem, then tap an adjacent gem to swap. Tap the same gem again to cancel the selection."
-                )
+                Text("Tap adjacent gems to swap.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
 
                 SpriteView(
                     scene: sceneCoordinator.scene,
                     options: [.allowsTransparency]
                 )
                 .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
+                .aspectRatio(boardAspectRatio, contentMode: .fit)
                 .background(AppColors.surface)
                 .overlay(
                     RoundedRectangle(
@@ -111,28 +104,33 @@ struct GameContainerView: View {
                     )
                 )
 
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(viewModel.statusMessage)
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.textSecondary)
-
-                    Text("Current board: \(viewModel.session.rowCount)x\(viewModel.session.columnCount) grid with SpriteKit touch mapping enabled.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.textMuted)
-                }
+                Text(viewModel.statusMessage)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
 
                 HStack(spacing: AppSpacing.medium) {
                     SecondaryButton(title: "Restart") {
-                        viewModel.restartGame()
+                        restartRound()
                     }
-                }
 
-                PrimaryButton(title: "Back to Home") {
-                    router.show(.home)
+                    SecondaryButton(title: "Home") {
+                        leaveGame()
+                    }
                 }
             }
             .navigationTitle("Game")
             .navigationBarTitleDisplayMode(.inline)
+
+            if viewModel.isPreparingBoard {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+
+                BoardLoadingOverlay(
+                    title: "Building Board",
+                    message: viewModel.loadingMessage ?? "Preparing board..."
+                )
+                .padding(24)
+            }
 
             if viewModel.session.isPaused && !viewModel.session.isGameOver {
                 Color.black.opacity(0.35)
@@ -143,10 +141,10 @@ struct GameContainerView: View {
                         viewModel.resumeGame()
                     },
                     onRestart: {
-                        viewModel.restartGame()
+                        restartRound()
                     },
                     onQuit: {
-                        router.show(.home)
+                        leaveGame()
                     }
                 )
                 .padding(24)
@@ -161,10 +159,10 @@ struct GameContainerView: View {
                     message: gameOverMessage,
                     score: viewModel.session.score,
                     onReplay: {
-                        viewModel.restartGame()
+                        restartRound()
                     },
                     onHome: {
-                        router.show(.home)
+                        leaveGame()
                     }
                 )
                 .padding(24)
@@ -175,16 +173,33 @@ struct GameContainerView: View {
                 viewModel.attemptSwap(from: from, to: to)
             }
             sceneCoordinator.render(board: viewModel.board)
-            sceneCoordinator.setInteractionEnabled(viewModel.session.isActive)
+            sceneCoordinator.setInteractionEnabled(
+                viewModel.session.isActive && !viewModel.isPreparingBoard
+            )
+        }
+        .task {
+            await viewModel.prepareInitialBoardIfNeeded()
         }
         .onChange(of: viewModel.session.board) { _, board in
             sceneCoordinator.render(board: board)
         }
         .onChange(of: viewModel.session.isPaused) { _, _ in
-            sceneCoordinator.setInteractionEnabled(viewModel.session.isActive)
+            sceneCoordinator.setInteractionEnabled(
+                viewModel.session.isActive && !viewModel.isPreparingBoard
+            )
         }
         .onChange(of: viewModel.session.isGameOver) { _, _ in
-            sceneCoordinator.setInteractionEnabled(viewModel.session.isActive)
+            sceneCoordinator.setInteractionEnabled(
+                viewModel.session.isActive && !viewModel.isPreparingBoard
+            )
+        }
+        .onChange(of: viewModel.isPreparingBoard) { _, _ in
+            sceneCoordinator.setInteractionEnabled(
+                viewModel.session.isActive && !viewModel.isPreparingBoard
+            )
+        }
+        .onDisappear {
+            sceneCoordinator.setInteractionEnabled(false)
         }
     }
 
@@ -194,7 +209,51 @@ struct GameContainerView: View {
             SecondaryButton(title: viewModel.session.isPaused ? "Paused" : "Pause") {
                 viewModel.pauseGame()
             }
-            .disabled(viewModel.session.isPaused || viewModel.session.isGameOver)
+            .disabled(viewModel.session.isPaused || viewModel.session.isGameOver || viewModel.isPreparingBoard)
         }
+    }
+
+    private func restartRound() {
+        Task {
+            await viewModel.restartGame()
+        }
+    }
+
+    private func leaveGame() {
+        sceneCoordinator.setInteractionEnabled(false)
+        router.show(.home)
+    }
+}
+
+private struct BoardLoadingOverlay: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: AppSpacing.large) {
+            ProgressView()
+                .tint(AppColors.accentPrimary)
+                .scaleEffect(1.2)
+
+            Text(title)
+                .font(AppTypography.screenTitle)
+                .foregroundStyle(AppColors.textPrimary)
+
+            Text(message)
+                .font(AppTypography.caption)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(AppSpacing.large)
+        .frame(maxWidth: 340)
+        .background(
+            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
+                .fill(AppColors.backgroundGradient)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
+                .stroke(AppColors.stroke, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.22), radius: 16, y: 8)
     }
 }

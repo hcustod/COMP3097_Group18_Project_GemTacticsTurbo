@@ -7,6 +7,8 @@
 
 struct GameSession: Equatable, Sendable {
     typealias Board = [[GemType?]]
+    static let defaultRowCount = 9
+    static let defaultColumnCount = 5
 
     let difficulty: Difficulty
     var board: Board
@@ -60,7 +62,10 @@ struct GameSession: Equatable, Sendable {
         !isPaused && !isGameOver
     }
 
-    static func emptyBoard(rows: Int = 8, columns: Int = 8) -> Board {
+    static func emptyBoard(
+        rows: Int = defaultRowCount,
+        columns: Int = defaultColumnCount
+    ) -> Board {
         Array(
             repeating: Array(repeating: nil, count: columns),
             count: rows

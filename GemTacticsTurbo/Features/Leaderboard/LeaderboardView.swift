@@ -12,18 +12,8 @@ struct LeaderboardView: View {
     @StateObject private var viewModel = LeaderboardViewModel()
 
     var body: some View {
-        ScreenContainer(
-            title: "Leaderboard",
-            subtitle: viewModel.isUsingLocalLeaderboard
-                ? "This local build uses on-device leaderboard storage so completed guest rounds still appear in the app."
-                : "Top scores load by difficulty from Firestore, including anonymous guest runs."
-        ) {
-            SectionHeader(
-                title: "Difficulty",
-                subtitle: viewModel.isUsingLocalLeaderboard
-                    ? "Switch filters to review the best locally saved scores for each mode."
-                    : "Switch filters to load the current top scores for each mode."
-            )
+        ScreenContainer(title: "Leaderboard") {
+            SectionHeader(title: "Difficulty")
 
             Picker("Difficulty", selection: $viewModel.selectedDifficulty) {
                 ForEach(Difficulty.allCases, id: \.self) { difficulty in
@@ -32,10 +22,11 @@ struct LeaderboardView: View {
             }
             .pickerStyle(.segmented)
 
-            SectionHeader(
-                title: "Rankings",
-                subtitle: rankingsSubtitle
-            )
+            if viewModel.isUsingLocalLeaderboard {
+                Text("Local scores")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
 
             leaderboardContent
 
@@ -53,12 +44,6 @@ struct LeaderboardView: View {
     @ViewBuilder
     private var leaderboardContent: some View {
         if viewModel.isLoading {
-            StatCard(
-                title: "Status",
-                value: "Loading",
-                detail: "Fetching leaderboard entries for \(viewModel.selectedDifficulty.displayName)."
-            )
-
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -74,11 +59,8 @@ struct LeaderboardView: View {
             }
         } else if viewModel.entries.isEmpty {
             StatCard(
-                title: "No Scores Yet",
-                value: viewModel.selectedDifficulty.displayName,
-                detail: viewModel.isUsingLocalLeaderboard
-                    ? "Finish a round to seed the local leaderboard for this difficulty."
-                    : "Finish a round to seed the leaderboard for this difficulty."
+                title: "No Scores",
+                value: viewModel.selectedDifficulty.displayName
             )
         } else {
             VStack(spacing: AppSpacing.medium) {
@@ -90,26 +72,6 @@ struct LeaderboardView: View {
                 }
             }
         }
-    }
-
-    private var rankingsSubtitle: String {
-        if viewModel.isLoading {
-            return "Loading scores for \(viewModel.selectedDifficulty.displayName)."
-        }
-
-        if viewModel.errorMessage != nil {
-            return "Leaderboard loading failed."
-        }
-
-        if viewModel.entries.isEmpty {
-            return viewModel.isUsingLocalLeaderboard
-                ? "No local scores have been saved for this difficulty yet."
-                : "No scores have been saved for this difficulty yet."
-        }
-
-        return viewModel.isUsingLocalLeaderboard
-            ? "Showing the top \(viewModel.entries.count) locally saved scores for \(viewModel.selectedDifficulty.displayName)."
-            : "Showing the top \(viewModel.entries.count) scores for \(viewModel.selectedDifficulty.displayName)."
     }
 }
 

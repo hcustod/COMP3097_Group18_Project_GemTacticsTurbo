@@ -27,6 +27,10 @@ final class GameCoreEngineTests: XCTestCase {
         XCTAssertEqual(board.first?.count, 8)
         XCTAssertTrue(MatchDetector.findMatches(on: board).isEmpty)
         XCTAssertFalse(board.flatMap(\.self).contains(where: { $0 == nil }))
+        XCTAssertGreaterThanOrEqual(
+            BoardMoveAnalyzer.countValidSwaps(on: board),
+            BoardGenerator.minimumPlayableSwaps
+        )
     }
 
     func testAdjacencyValidationUsesOrthogonalNeighborsOnly() {
@@ -244,6 +248,71 @@ final class GameCoreEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(score, 1_350)
+    }
+
+    func testBoardMoveAnalyzerDetectsDeadBoard() {
+        let board = makeBoard([
+            [.sapphire, .topaz, .ruby, .emerald, .ruby],
+            [.amethyst, .ruby, .ruby, .amethyst, .emerald],
+            [.emerald, .emerald, .amethyst, .topaz, .sapphire],
+            [.amethyst, .sapphire, .topaz, .topaz, .amethyst],
+            [.sapphire, .amethyst, .emerald, .emerald, .amethyst]
+        ])
+
+        XCTAssertTrue(MatchDetector.findMatches(on: board).isEmpty)
+        XCTAssertEqual(BoardMoveAnalyzer.countValidSwaps(on: board), 0)
+        XCTAssertFalse(
+            BoardMoveAnalyzer.hasAtLeastValidSwaps(
+                BoardGenerator.minimumPlayableSwaps,
+                on: board
+            )
+        )
+    }
+
+    func testRepairPlayabilityRebuildsDeadBoardWithAtLeastTwoLiveMoves() {
+        let deadBoard = makeBoard([
+            [.sapphire, .topaz, .ruby, .emerald, .ruby],
+            [.amethyst, .ruby, .ruby, .amethyst, .emerald],
+            [.emerald, .emerald, .amethyst, .topaz, .sapphire],
+            [.amethyst, .sapphire, .topaz, .topaz, .amethyst],
+            [.sapphire, .amethyst, .emerald, .emerald, .amethyst]
+        ])
+        var gemSource = SequenceGemSource([
+            .ruby,
+            .ruby,
+            .ruby,
+            .sapphire,
+            .emerald,
+            .topaz,
+            .amethyst
+        ])
+
+        let repaired = BoardGenerator.repairPlayability(
+            for: deadBoard,
+            using: &gemSource
+        )
+
+        XCTAssertTrue(repaired.wasRepaired)
+        XCTAssertTrue(repaired.metMinimumSwapRequirement)
+        XCTAssertTrue(MatchDetector.findMatches(on: repaired.board).isEmpty)
+        XCTAssertGreaterThanOrEqual(
+            BoardMoveAnalyzer.countValidSwaps(on: repaired.board),
+            BoardGenerator.minimumPlayableSwaps
+        )
+    }
+
+    func testDefaultBoardEngineProducesPortraitBoardWithMoveChoices() {
+        let engine = BoardEngine()
+
+        let board = engine.makeInitialBoard()
+
+        XCTAssertEqual(board.count, GameSession.defaultRowCount)
+        XCTAssertEqual(board.first?.count, GameSession.defaultColumnCount)
+        XCTAssertTrue(MatchDetector.findMatches(on: board).isEmpty)
+        XCTAssertGreaterThanOrEqual(
+            BoardMoveAnalyzer.countValidSwaps(on: board),
+            BoardGenerator.minimumPlayableSwaps
+        )
     }
 
     private typealias Board = GameSession.Board

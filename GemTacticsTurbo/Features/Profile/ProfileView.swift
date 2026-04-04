@@ -10,19 +10,13 @@ import SwiftUI
 struct ProfileView: View {
     @ObservedObject var router: AppRouter
     @StateObject private var viewModel = ProfileViewModel()
+    private let statColumns = [
+        GridItem(.flexible(), spacing: AppSpacing.medium),
+        GridItem(.flexible(), spacing: AppSpacing.medium)
+    ]
 
     var body: some View {
-        ScreenContainer(
-            title: "Profile",
-            subtitle: router.isGuest
-                ? "Guest stats are stored locally for the current anonymous session."
-                : "Completed games now update your Firestore-backed profile stats automatically."
-        ) {
-            SectionHeader(
-                title: "Overview",
-                subtitle: sectionSubtitle
-            )
-
+        ScreenContainer(title: "Profile") {
             profileContent
 
             SecondaryButton(title: "Back to Home") {
@@ -39,12 +33,6 @@ struct ProfileView: View {
     @ViewBuilder
     private var profileContent: some View {
         if viewModel.isLoading {
-            StatCard(
-                title: "Status",
-                value: "Loading",
-                detail: "Fetching the current profile data."
-            )
-
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -53,42 +41,19 @@ struct ProfileView: View {
         } else if let profile = viewModel.profile {
             VStack(spacing: AppSpacing.medium) {
                 StatCard(
-                    title: "Display Name",
+                    title: "Player",
                     value: profile.displayName,
-                    detail: profile.email ?? (profile.isGuest ? "Guest sessions do not store an email address." : "No email address is available.")
+                    detail: profile.email ?? (profile.isGuest ? "Guest" : nil)
                 )
 
-                StatCard(
-                    title: "Avatar",
-                    value: profile.avatarName,
-                    detail: profile.isGuest
-                        ? "Guest sessions use the local guest avatar style for this MVP build."
-                        : "Avatar selection is static in the MVP build."
-                )
-
-                StatCard(
-                    title: "Games Played",
-                    value: "\(profile.gamesPlayed)",
-                    detail: "Average score: \(profile.averageScore.formatted())"
-                )
-
-                StatCard(
-                    title: "Highest Score",
-                    value: "\(profile.highestScore)",
-                    detail: "Unlocked difficulty: \(profile.unlockedDifficulty.capitalized)"
-                )
-
-                StatCard(
-                    title: "Total Score",
-                    value: profile.totalScore.formatted(),
-                    detail: "Cumulative score across all completed rounds."
-                )
-
-                StatCard(
-                    title: "Match Groups",
-                    value: "\(profile.totalMatches)",
-                    detail: "MVP total matches count every resolved match group across cascade steps."
-                )
+                LazyVGrid(columns: statColumns, spacing: AppSpacing.medium) {
+                    StatCard(title: "Games", value: "\(profile.gamesPlayed)")
+                    StatCard(title: "Best", value: "\(profile.highestScore)")
+                    StatCard(title: "Average", value: profile.averageScore.formatted())
+                    StatCard(title: "Total", value: profile.totalScore.formatted())
+                    StatCard(title: "Matches", value: "\(profile.totalMatches)")
+                    StatCard(title: "Unlocked", value: profile.unlockedDifficulty.capitalized)
+                }
 
                 SecondaryButton(title: "Refresh Stats") {
                     Task {
@@ -99,21 +64,5 @@ struct ProfileView: View {
         } else {
             InlineStatusMessage(message: "No profile data is available for the current user.")
         }
-    }
-
-    private var sectionSubtitle: String {
-        if viewModel.isLoading {
-            return "Loading the current profile snapshot."
-        }
-
-        if viewModel.errorMessage != nil {
-            return "A profile error occurred."
-        }
-
-        if router.isGuest {
-            return "Guest mode uses local stats for the active anonymous session."
-        }
-
-        return "Registered accounts show the latest saved stats from Firestore."
     }
 }
