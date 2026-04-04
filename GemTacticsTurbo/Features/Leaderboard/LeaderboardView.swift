@@ -1,10 +1,3 @@
-//
-//  LeaderboardView.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct LeaderboardView: View {
@@ -12,26 +5,55 @@ struct LeaderboardView: View {
     @StateObject private var viewModel = LeaderboardViewModel()
 
     var body: some View {
-        ScreenContainer(title: "Leaderboard") {
-            SectionHeader(title: "Difficulty")
+        ScreenContainer(
+            title: "Leaderboard",
+            subtitle: viewModel.isUsingLocalLeaderboard
+                ? "This local build uses on-device leaderboard storage so completed guest rounds still appear in the app."
+                : "Top scores load by difficulty from Firestore, including anonymous guest runs."
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
+                GlassPanel {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Difficulty")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-            Picker("Difficulty", selection: $viewModel.selectedDifficulty) {
-                ForEach(Difficulty.allCases, id: \.self) { difficulty in
-                    Text(difficulty.displayName).tag(difficulty)
+                        Text(
+                            viewModel.isUsingLocalLeaderboard
+                                ? "Switch filters to review the best locally saved scores for each mode."
+                                : "Switch filters to load the current top scores for each mode."
+                        )
+                        .font(AppTypography.label)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        Picker("Difficulty", selection: $viewModel.selectedDifficulty) {
+                            ForEach(Difficulty.allCases, id: \.self) { difficulty in
+                                Text(difficulty.displayName).tag(difficulty)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
 
-            if viewModel.isUsingLocalLeaderboard {
-                Text("Local scores")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-            }
+                GlassPanel(elevated: true) {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Rankings")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-            leaderboardContent
+                        Text(rankingsSubtitle)
+                            .font(AppTypography.label)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-            SecondaryButton(title: "Back to Home") {
-                router.show(.home)
+                        leaderboardContent
+                    }
+                }
+
+                SecondaryButton(title: "Back to Home") {
+                    router.show(.home)
+                }
             }
         }
         .navigationTitle("Leaderboard")
@@ -44,11 +66,25 @@ struct LeaderboardView: View {
     @ViewBuilder
     private var leaderboardContent: some View {
         if viewModel.isLoading {
+            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                Text("STATUS")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textMuted)
+                Text("Loading")
+                    .font(AppTypography.bodyStrong)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text("Fetching leaderboard entries for \(viewModel.selectedDifficulty.displayName).")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
         } else if let errorMessage = viewModel.errorMessage {
-            VStack(spacing: AppSpacing.medium) {
+            VStack(spacing: AppSpacing.stackStandard) {
                 InlineStatusMessage(message: errorMessage)
 
                 SecondaryButton(title: "Retry") {
@@ -58,12 +94,25 @@ struct LeaderboardView: View {
                 }
             }
         } else if viewModel.entries.isEmpty {
-            StatCard(
-                title: "No Scores",
-                value: viewModel.selectedDifficulty.displayName
-            )
+            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                Text("NO SCORES YET")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textMuted)
+                Text(viewModel.selectedDifficulty.displayName)
+                    .font(AppTypography.bodyStrong)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(
+                    viewModel.isUsingLocalLeaderboard
+                        ? "Finish a round to seed the local leaderboard for this difficulty."
+                        : "Finish a round to seed the leaderboard for this difficulty."
+                )
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            VStack(spacing: AppSpacing.medium) {
+            VStack(spacing: AppSpacing.stackTight) {
                 ForEach(Array(viewModel.entries.enumerated()), id: \.element.id) { index, entry in
                     LeaderboardRow(
                         rank: index + 1,
@@ -72,6 +121,26 @@ struct LeaderboardView: View {
                 }
             }
         }
+    }
+
+    private var rankingsSubtitle: String {
+        if viewModel.isLoading {
+            return "Loading scores for \(viewModel.selectedDifficulty.displayName)."
+        }
+
+        if viewModel.errorMessage != nil {
+            return "Leaderboard loading failed."
+        }
+
+        if viewModel.entries.isEmpty {
+            return viewModel.isUsingLocalLeaderboard
+                ? "No local scores have been saved for this difficulty yet."
+                : "No scores have been saved for this difficulty yet."
+        }
+
+        return viewModel.isUsingLocalLeaderboard
+            ? "Showing the top \(viewModel.entries.count) locally saved scores for \(viewModel.selectedDifficulty.displayName)."
+            : "Showing the top \(viewModel.entries.count) scores for \(viewModel.selectedDifficulty.displayName)."
     }
 }
 
@@ -83,14 +152,27 @@ private struct LeaderboardRow: View {
         entry.timestamp.formatted(date: .abbreviated, time: .omitted)
     }
 
-    var body: some View {
-        HStack(spacing: AppSpacing.medium) {
-            Text("#\(rank)")
-                .font(AppTypography.sectionTitle)
-                .foregroundStyle(AppColors.accentSecondary)
-                .frame(width: 44, alignment: .leading)
+    private var rankForeground: AnyShapeStyle {
+        switch rank {
+        case 1:
+            AnyShapeStyle(AppColors.rankGoldGradient)
+        case 2:
+            AnyShapeStyle(AppColors.rankSilverForeground)
+        case 3:
+            AnyShapeStyle(AppColors.rankBronzeGradient)
+        default:
+            AnyShapeStyle(AppColors.accentSecondary)
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 4) {
+    var body: some View {
+        HStack(alignment: .center, spacing: AppSpacing.medium) {
+            Text("#\(rank)")
+                .font(AppTypography.hudValue)
+                .foregroundStyle(rankForeground)
+                .frame(width: 48, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                 Text(entry.displayName)
                     .font(AppTypography.bodyStrong)
                     .foregroundStyle(AppColors.textPrimary)
@@ -100,18 +182,22 @@ private struct LeaderboardRow: View {
                     .foregroundStyle(AppColors.textMuted)
             }
 
-            Spacer()
+            Spacer(minLength: AppSpacing.small)
 
             Text(entry.score.formatted())
                 .font(AppTypography.bodyStrong)
                 .foregroundStyle(AppColors.textPrimary)
+                .multilineTextAlignment(.trailing)
         }
         .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
+        .background {
+            RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous)
+                .fill(AppColors.glassFillElevated)
+        }
         .overlay(
-            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                .stroke(AppColors.stroke, lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous)
+                .stroke(AppColors.glassBorder, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous))
     }
 }

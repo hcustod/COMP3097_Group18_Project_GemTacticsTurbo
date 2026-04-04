@@ -24,7 +24,7 @@ struct StatCard: View {
 
             if let detail {
                 Text(detail)
-                    .font(AppTypography.caption)
+                    .font(AppTypography.body)
                     .foregroundStyle(AppColors.textSecondary)
             }
         }

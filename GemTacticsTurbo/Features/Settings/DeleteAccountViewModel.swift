@@ -42,6 +42,10 @@ final class DeleteAccountViewModel: ObservableObject {
     }
 
     func deleteAccount() async -> Bool {
+        guard !isDeleting else {
+            return false
+        }
+
         refreshUserState()
 
         guard !isGuest else {

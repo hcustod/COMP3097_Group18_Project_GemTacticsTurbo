@@ -17,6 +17,7 @@ final class ProfileViewModel: ObservableObject {
     private let authService: AuthService
     private let profileService: ProfileService
     private var cancellables: Set<AnyCancellable> = []
+    private var activeLoadRequestID = 0
 
     init(
         authService: AuthService,
@@ -35,26 +36,44 @@ final class ProfileViewModel: ObservableObject {
     }
 
     func loadProfile() async {
+        activeLoadRequestID += 1
+        let requestID = activeLoadRequestID
+        isLoading = true
+        errorMessage = nil
+        defer {
+            if requestID == activeLoadRequestID {
+                isLoading = false
+            }
+        }
+
         guard let currentUser = authService.getCurrentUser() else {
             profile = nil
             errorMessage = "No signed-in user is available."
             return
         }
 
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
         do {
             if let fetchedProfile = try await profileService.fetchProfile(for: currentUser) {
+                guard requestID == activeLoadRequestID else {
+                    return
+                }
+
                 profile = fetchedProfile
                 return
             }
 
             let fallbackProfile = UserProfile.initial(for: currentUser)
             try await profileService.updateProfile(fallbackProfile)
+            guard requestID == activeLoadRequestID else {
+                return
+            }
+
             profile = fallbackProfile
         } catch {
+            guard requestID == activeLoadRequestID else {
+                return
+            }
+
             profile = nil
             errorMessage = "Unable to load your profile right now. Try again."
         }

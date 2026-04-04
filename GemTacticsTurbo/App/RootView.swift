@@ -10,6 +10,7 @@ import SwiftUI
 struct RootView: View {
     @StateObject private var router = AppRouter()
     @State private var hasBootstrappedSession = false
+    @State private var isBootstrappingSession = false
     private let authService = AuthService.shared
 
     var body: some View {
@@ -31,9 +32,15 @@ struct RootView: View {
             }
 
             hasBootstrappedSession = true
+            isBootstrappingSession = true
             await bootstrapSession()
+            isBootstrappingSession = false
         }
         .onReceive(authService.observeAuthState()) { user in
+            guard !isBootstrappingSession else {
+                return
+            }
+
             router.applyAuthState(user)
         }
     }
@@ -45,7 +52,8 @@ struct RootView: View {
         }
 
         if !authService.isRemoteAuthAvailable {
-            _ = try? await authService.signInAnonymously()
+            let guestUser = try? await authService.signInAnonymously()
+            router.applyAuthState(guestUser)
             return
         }
 
@@ -55,7 +63,15 @@ struct RootView: View {
 
 private struct LaunchingPlaceholderView: View {
     var body: some View {
-        ScreenContainer(title: "Gem Tactics Turbo") {
+        ScreenContainer(
+            title: "Gem Tactics Turbo",
+            subtitle: "Checking the current session and preparing the app flow."
+        ) {
+            SectionHeader(
+                title: "Launching",
+                subtitle: "Local builds without Firebase configuration now fall straight into guest play so the full MVP remains usable."
+            )
+
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)

@@ -1,10 +1,3 @@
-//
-//  SecondaryButton.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct SecondaryButton: View {
@@ -18,15 +11,23 @@ struct SecondaryButton: View {
             Text(title)
                 .font(AppTypography.bodyStrong)
                 .foregroundStyle(AppColors.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: AppSpacing.buttonHeight)
-                .background(AppColors.surface)
+                .frame(maxWidth: .infinity, minHeight: AppSpacing.buttonHeight)
+                .padding(.horizontal, AppSpacing.buttonPaddingHorizontal)
+                .background {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous)
+                            .fill(AppColors.glassFill)
+                    }
+                }
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                        .stroke(AppColors.stroke, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous)
+                        .stroke(AppColors.glassBorder, lineWidth: 1)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
-                .opacity(isEnabled ? 1 : 0.6)
+                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.radiusCard, style: .continuous))
+                .opacity(isEnabled ? 1 : 0.48)
         }
+        .buttonStyle(.plain)
     }
 }

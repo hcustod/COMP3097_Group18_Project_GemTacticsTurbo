@@ -24,6 +24,10 @@ struct GameContainerView: View {
         )
     }
 
+    private var gameSubtitle: String {
+        "SpriteKit renders the board while the round state, score, timer, and swap validation stay synchronized through the SwiftUI view model."
+    }
+
     private var scoreMultiplierText: String {
         String(format: "%.1f", difficulty.scoreMultiplier)
     }
@@ -50,7 +54,15 @@ struct GameContainerView: View {
 
     var body: some View {
         ZStack {
-            ScreenContainer(title: "\(difficulty.displayName) Match") {
+            ScreenContainer(
+                title: "\(difficulty.displayName) Match",
+                subtitle: gameSubtitle
+            ) {
+                SectionHeader(
+                    title: "HUD",
+                    subtitle: "Timer, score, moves, and combo state update here while the board interaction stays active below."
+                )
+
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: AppSpacing.medium),
@@ -79,9 +91,10 @@ struct GameContainerView: View {
                     hudButton
                 }
 
-                Text("Tap adjacent gems to swap.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textSecondary)
+                SectionHeader(
+                    title: "Board",
+                    subtitle: "Tap a gem, then tap an adjacent gem to swap. Invalid swaps do not cost a move."
+                )
 
                 SpriteView(
                     scene: sceneCoordinator.scene,
@@ -104,16 +117,29 @@ struct GameContainerView: View {
                     )
                 )
 
-                Text(viewModel.statusMessage)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textSecondary)
+                GlassPanel {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                        Text("Round Status")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.brandGradientText)
 
-                HStack(spacing: AppSpacing.medium) {
+                        Text(viewModel.statusMessage)
+                            .font(AppTypography.body)
+                            .foregroundStyle(AppColors.textPrimary)
+
+                        Text("Current board: \(viewModel.session.rowCount)x\(viewModel.session.columnCount)")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.textTertiary)
+                    }
+                }
+
+                VStack(spacing: AppSpacing.stackTight) {
                     SecondaryButton(title: "Restart") {
                         restartRound()
                     }
+                    .disabled(viewModel.isPreparingBoard)
 
-                    SecondaryButton(title: "Home") {
+                    PrimaryButton(title: "Back to Home") {
                         leaveGame()
                     }
                 }
@@ -214,6 +240,10 @@ struct GameContainerView: View {
     }
 
     private func restartRound() {
+        guard !viewModel.isPreparingBoard else {
+            return
+        }
+
         Task {
             await viewModel.restartGame()
         }

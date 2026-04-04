@@ -20,14 +20,12 @@ struct GameOverView: View {
                 .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
 
-            if !message.isEmpty {
-                Text(message)
-                    .font(AppTypography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(AppColors.textSecondary)
-            }
+            Text(message)
+                .font(AppTypography.body)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(AppColors.textSecondary)
 
-            Text("\(score)")
+            Text("Final Score: \(score)")
                 .font(AppTypography.statValue)
                 .foregroundStyle(AppColors.textPrimary)
 

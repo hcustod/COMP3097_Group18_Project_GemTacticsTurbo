@@ -11,8 +11,20 @@ struct GameModeView: View {
     @ObservedObject var router: AppRouter
 
     var body: some View {
-        ScreenContainer(title: "Choose Difficulty") {
-            SectionHeader(title: "Modes")
+        ScreenContainer(
+            title: "Game Mode",
+            subtitle: "Choose a difficulty and jump straight into a live match-3 round with the selected rules."
+        ) {
+            SectionHeader(
+                title: "Mode Select",
+                subtitle: "Each option is generated from the centralized difficulty model so the rules stay consistent across the app."
+            )
+
+            StatCard(
+                title: "Selection Flow",
+                value: "Difficulty Ready",
+                detail: "Pick a difficulty to start a live board session with the matching move limit, timer, and target score."
+            )
 
             VStack(spacing: AppSpacing.medium) {
                 ForEach(Difficulty.allCases, id: \.self) { difficulty in
@@ -35,8 +47,8 @@ private struct DifficultyCard: View {
     let difficulty: Difficulty
     let action: () -> Void
 
-    private var scoreMultiplierText: String {
-        String(format: "x%.1f", difficulty.scoreMultiplier)
+    private var multiplierText: String {
+        String(format: "%.1f", difficulty.scoreMultiplier)
     }
 
     var body: some View {
@@ -48,9 +60,12 @@ private struct DifficultyCard: View {
             HStack(spacing: AppSpacing.medium) {
                 difficultyDetail(title: "Moves", value: "\(difficulty.moveLimit)")
                 difficultyDetail(title: "Time", value: "\(difficulty.timeLimit)s")
-                difficultyDetail(title: "Goal", value: "\(difficulty.targetScore)")
-                difficultyDetail(title: "Score", value: scoreMultiplierText)
+                difficultyDetail(title: "Target", value: "\(difficulty.targetScore)")
             }
+
+            Text("Score multiplier: \(multiplierText)x")
+                .font(AppTypography.body)
+                .foregroundStyle(AppColors.textSecondary)
 
             PrimaryButton(title: "Play \(difficulty.displayName)") {
                 action()

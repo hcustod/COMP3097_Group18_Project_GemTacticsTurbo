@@ -53,6 +53,10 @@ final class RegisterViewModel: ObservableObject {
     }
 
     func register() async -> Bool {
+        guard !isSubmitting else {
+            return false
+        }
+
         guard let validationError = validateRegistration() else {
             isSubmitting = true
             defer { isSubmitting = false }

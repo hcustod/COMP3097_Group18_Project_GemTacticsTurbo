@@ -44,6 +44,10 @@ final class LoginViewModel: ObservableObject {
     }
 
     func signIn() async -> Bool {
+        guard !isSubmitting else {
+            return false
+        }
+
         guard let validationError = validateLogin() else {
             isSubmitting = true
             defer { isSubmitting = false }
@@ -63,6 +67,10 @@ final class LoginViewModel: ObservableObject {
     }
 
     func signInAsGuest() async -> Bool {
+        guard !isSubmitting else {
+            return false
+        }
+
         isSubmitting = true
         defer { isSubmitting = false }
 

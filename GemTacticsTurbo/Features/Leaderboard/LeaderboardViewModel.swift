@@ -16,6 +16,7 @@ final class LeaderboardViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     private let leaderboardService: LeaderboardService
+    private var activeLoadRequestID = 0
 
     init(leaderboardService: LeaderboardService) {
         self.leaderboardService = leaderboardService
@@ -30,13 +31,29 @@ final class LeaderboardViewModel: ObservableObject {
     }
 
     func loadScores() async {
+        activeLoadRequestID += 1
+        let requestID = activeLoadRequestID
+        let difficulty = selectedDifficulty
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            if requestID == activeLoadRequestID {
+                isLoading = false
+            }
+        }
 
         do {
-            entries = try await leaderboardService.fetchTopScores(for: selectedDifficulty)
+            let fetchedEntries = try await leaderboardService.fetchTopScores(for: difficulty)
+            guard requestID == activeLoadRequestID else {
+                return
+            }
+
+            entries = fetchedEntries
         } catch {
+            guard requestID == activeLoadRequestID else {
+                return
+            }
+
             entries = []
             errorMessage = error.localizedDescription
         }

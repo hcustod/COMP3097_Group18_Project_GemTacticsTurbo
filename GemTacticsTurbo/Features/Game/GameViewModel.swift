@@ -82,6 +82,10 @@ final class GameViewModel: ObservableObject {
     }
 
     func restartGame() async {
+        guard !isPreparingBoard else {
+            return
+        }
+
         hasPreparedInitialBoard = true
         await prepareBoardForNewRound(loadingMessage: "Preparing new round...")
     }
@@ -171,7 +175,7 @@ final class GameViewModel: ObservableObject {
     }
 
     func pauseGame() {
-        guard !session.isGameOver, !isPreparingBoard else {
+        guard session.isActive, !isPreparingBoard else {
             return
         }
 
@@ -180,13 +184,14 @@ final class GameViewModel: ObservableObject {
     }
 
     func resumeGame() {
-        guard !session.isGameOver, !isPreparingBoard else {
+        guard session.isPaused, !session.isGameOver, !isPreparingBoard else {
             return
         }
 
         session.isPaused = false
         statusMessage = "Go"
     }
+
     func processTimerTick() {
         guard session.isActive, !isPreparingBoard else {
             return
@@ -205,6 +210,8 @@ final class GameViewModel: ObservableObject {
     }
 
     private func startTimer() {
+        stopTimer()
+
         let timer = Timer(
             timeInterval: 1.0,
             repeats: true

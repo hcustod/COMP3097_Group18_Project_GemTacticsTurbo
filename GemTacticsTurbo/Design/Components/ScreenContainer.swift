@@ -1,10 +1,3 @@
-//
-//  ScreenContainer.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct ScreenContainer<Content: View>: View {
@@ -28,15 +21,15 @@ struct ScreenContainer<Content: View>: View {
                 .ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: AppSpacing.large) {
-                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+                    VStack(alignment: .leading, spacing: AppSpacing.small) {
                         Text(title)
                             .font(AppTypography.appTitle)
                             .foregroundStyle(AppColors.textPrimary)
 
                         if let subtitle {
                             Text(subtitle)
-                                .font(AppTypography.caption)
+                                .font(AppTypography.body)
                                 .foregroundStyle(AppColors.textSecondary)
                         }
                     }
@@ -44,8 +37,8 @@ struct ScreenContainer<Content: View>: View {
                     content
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppSpacing.screenHorizontal)
-                .padding(.vertical, AppSpacing.screenVertical)
+                .padding(.horizontal, AppSpacing.pagePadding)
+                .padding(.vertical, AppSpacing.pagePadding)
             }
         }
     }

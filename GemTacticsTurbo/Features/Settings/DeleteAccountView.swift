@@ -1,79 +1,111 @@
-//
-//  DeleteAccountView.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
-
 import SwiftUI
 
 struct DeleteAccountView: View {
     @ObservedObject var router: AppRouter
     @StateObject private var viewModel = DeleteAccountViewModel()
+    private let authService = AuthService.shared
 
     var body: some View {
-        ScreenContainer(title: "Delete Account") {
-            SectionHeader(title: router.isGuest ? "Guest Session" : "Type DELETE")
+        ScreenContainer(
+            title: "Delete Account",
+            subtitle: router.isGuest
+                ? "Guest sessions do not have a permanent account to delete."
+                : "This action permanently removes the current Firebase-authenticated account."
+        ) {
+            VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
+                GlassPanel {
+                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                        Text("Warning")
+                            .font(AppTypography.sectionTitle)
+                            .foregroundStyle(AppColors.destructiveText)
 
-            if router.isGuest {
-                StatCard(
-                    title: "Guest",
-                    value: "No Account"
-                )
-            } else {
-                StatCard(
-                    title: "Confirm",
-                    value: "DELETE"
-                )
-
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text("Enter DELETE")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.textMuted)
-
-                    TextField("DELETE", text: $viewModel.confirmationText)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .font(AppTypography.bodyStrong)
-                        .foregroundStyle(AppColors.textPrimary)
-                        .padding(AppSpacing.medium)
-                        .background(AppColors.surfaceElevated)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                                .stroke(AppColors.stroke, lineWidth: 1)
+                        Text(
+                            router.isGuest
+                                ? guestWarningText
+                                : "For safety, type DELETE before continuing. Firebase may require you to sign in again if the session is too old."
                         )
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: AppSpacing.cornerRadius,
-                                style: .continuous
-                            )
-                        )
-                }
+                        .font(AppTypography.label)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                if let errorMessage = viewModel.errorMessage {
-                    InlineStatusMessage(message: errorMessage)
-                }
-            }
+                        if router.isGuest {
+                            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                                Text("GUEST SESSION")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.textMuted)
+                                Text("No Deletion Needed")
+                                    .font(AppTypography.bodyStrong)
+                                    .foregroundStyle(AppColors.textPrimary)
+                                Text(guestSessionDetail)
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.textTertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.vertical, AppSpacing.xSmall)
+                        } else {
+                            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                                Text("CONFIRMATION")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.destructiveText.opacity(0.9))
+                                Text("Type DELETE")
+                                    .font(AppTypography.bodyStrong)
+                                    .foregroundStyle(AppColors.textPrimary)
+                                Text("Account deletion removes the authentication account and returns you to the login flow.")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.textTertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.vertical, AppSpacing.xSmall)
 
-            VStack(spacing: AppSpacing.medium) {
-                if !router.isGuest {
-                    PrimaryButton(title: viewModel.isDeleting ? "Deleting..." : "Delete My Account") {
-                        Task {
-                            let wasDeleted = await viewModel.deleteAccount()
-                            if wasDeleted {
-                                router.showLogin()
+                            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                                Text("Confirmation Text")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.textMuted)
+
+                                TextField("DELETE", text: $viewModel.confirmationText)
+                                    .textInputAutocapitalization(.characters)
+                                    .autocorrectionDisabled()
+                                    .font(AppTypography.bodyStrong)
+                                    .foregroundStyle(AppColors.textPrimary)
+                                    .padding(AppSpacing.medium)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: AppSpacing.radiusInput, style: .continuous)
+                                            .fill(AppColors.destructiveBackground)
+                                    }
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: AppSpacing.radiusInput, style: .continuous)
+                                            .stroke(AppColors.destructiveBorder, lineWidth: 1)
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.radiusInput, style: .continuous))
+                            }
+
+                            if let errorMessage = viewModel.errorMessage {
+                                InlineStatusMessage(message: errorMessage)
                             }
                         }
                     }
-                    .disabled(!viewModel.canDelete)
                 }
 
-                SecondaryButton(title: "Back to Settings") {
-                    router.show(.settings)
-                }
+                VStack(spacing: AppSpacing.stackTight) {
+                    if !router.isGuest {
+                        PrimaryButton(title: viewModel.isDeleting ? "Deleting..." : "Delete My Account") {
+                            Task {
+                                let wasDeleted = await viewModel.deleteAccount()
+                                if wasDeleted {
+                                    router.showLogin()
+                                }
+                            }
+                        }
+                        .disabled(!viewModel.canDelete)
+                    }
 
-                SecondaryButton(title: "Return Home") {
-                    router.show(.home)
+                    SecondaryButton(title: "Back to Settings") {
+                        router.show(.settings)
+                    }
+
+                    SecondaryButton(title: "Return Home") {
+                        router.show(.home)
+                    }
                 }
             }
         }
@@ -82,5 +114,17 @@ struct DeleteAccountView: View {
         .onAppear {
             viewModel.refreshUserState()
         }
+    }
+
+    private var guestWarningText: String {
+        authService.isRemoteAuthAvailable
+            ? "You can leave guest mode by signing out."
+            : "You can leave local guest mode by ending the current session."
+    }
+
+    private var guestSessionDetail: String {
+        authService.isRemoteAuthAvailable
+            ? "Anonymous sessions can simply sign out from Settings."
+            : "Local guest sessions can simply end the current session from Settings."
     }
 }
