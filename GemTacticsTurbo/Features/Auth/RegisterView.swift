@@ -5,34 +5,12 @@ struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
 
     var body: some View {
-        ScreenContainer(
-            title: "Create Account",
-            subtitle: "Create an email-based account for the MVP and start with a ready-to-use profile record."
-        ) {
+        ScreenContainer(title: "Create Account") {
             GlassPanel {
                 VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
-                    Text("Register")
+                    Text("Create Account")
                         .font(AppTypography.sectionTitle)
                         .foregroundStyle(AppColors.brandGradientText)
-
-                    Text("The account flow is now live with basic client-side validation and Firebase registration.")
-                        .font(AppTypography.label)
-                        .foregroundStyle(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                        Text("ACCOUNT SETUP")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.textMuted)
-                        Text("Email Only")
-                            .font(AppTypography.bodyStrong)
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("Display name, email, password, and confirmation are required for MVP registration.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.vertical, AppSpacing.xSmall)
 
                     if let errorMessage = viewModel.errorMessage {
                         InlineStatusMessage(message: errorMessage)
@@ -71,7 +49,7 @@ struct RegisterView: View {
                             }
                             .disabled(viewModel.canSubmit == false)
 
-                            SecondaryButton(title: "Back to Login") {
+                            SecondaryButton(title: "Sign In") {
                                 router.showLogin()
                             }
                             .disabled(viewModel.isSubmitting)

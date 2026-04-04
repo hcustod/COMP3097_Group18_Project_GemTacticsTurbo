@@ -25,7 +25,7 @@ struct GameOverView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppColors.textSecondary)
 
-            Text("Final Score: \(score)")
+            Text("Score \(score)")
                 .font(AppTypography.statValue)
                 .foregroundStyle(AppColors.textPrimary)
 
@@ -33,7 +33,7 @@ struct GameOverView: View {
                 onReplay()
             }
 
-            SecondaryButton(title: "Back to Home") {
+            SecondaryButton(title: "Home") {
                 onHome()
             }
         }

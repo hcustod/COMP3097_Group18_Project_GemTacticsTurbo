@@ -3,30 +3,21 @@ import SwiftUI
 struct ProfileView: View {
     @ObservedObject var router: AppRouter
     @StateObject private var viewModel = ProfileViewModel()
-    private let authService = AuthService.shared
 
     var body: some View {
-        ScreenContainer(
-            title: "Profile",
-            subtitle: profileSubtitle
-        ) {
+        ScreenContainer(title: "Profile") {
             VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
                 GlassPanel(elevated: true) {
                     VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
-                        Text("Overview")
+                        Text("Stats")
                             .font(AppTypography.sectionTitle)
                             .foregroundStyle(AppColors.brandGradientText)
-
-                        Text(sectionSubtitle)
-                            .font(AppTypography.label)
-                            .foregroundStyle(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
 
                         profileContent
                     }
                 }
 
-                SecondaryButton(title: "Back to Home") {
+                SecondaryButton(title: "Home") {
                     router.show(.home)
                 }
             }
@@ -41,19 +32,6 @@ struct ProfileView: View {
     @ViewBuilder
     private var profileContent: some View {
         if viewModel.isLoading {
-            VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
-                Text("STATUS")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textMuted)
-                Text("Loading")
-                    .font(AppTypography.bodyStrong)
-                    .foregroundStyle(AppColors.textPrimary)
-                Text("Fetching the current profile data.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textTertiary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -62,45 +40,37 @@ struct ProfileView: View {
         } else if let profile = viewModel.profile {
             VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
                 ProfileStatBlock(
-                    overline: "Display Name",
+                    overline: "Name",
                     value: profile.displayName,
                     detail: profile.email
-                        ?? (profile.isGuest ? "Guest sessions do not store an email address." : "No email address is available.")
                 )
 
                 ProfileStatBlock(
-                    overline: "Avatar",
-                    value: profile.avatarName,
-                    detail: profile.isGuest
-                        ? "Guest sessions use the local guest avatar style for this MVP build."
-                        : "Avatar selection is static in the MVP build."
+                    overline: "Games",
+                    value: "\(profile.gamesPlayed)"
                 )
 
                 ProfileStatBlock(
-                    overline: "Games Played",
-                    value: "\(profile.gamesPlayed)",
-                    detail: "Average score: \(profile.averageScore.formatted())"
+                    overline: "Average",
+                    value: profile.averageScore.formatted()
                 )
 
                 ProfileStatBlock(
-                    overline: "Highest Score",
-                    value: "\(profile.highestScore)",
-                    detail: "Unlocked difficulty: \(profile.unlockedDifficulty.capitalized)"
+                    overline: "Best",
+                    value: "\(profile.highestScore)"
                 )
 
                 ProfileStatBlock(
-                    overline: "Total Score",
-                    value: profile.totalScore.formatted(),
-                    detail: "Cumulative score across all completed rounds."
+                    overline: "Total",
+                    value: profile.totalScore.formatted()
                 )
 
                 ProfileStatBlock(
-                    overline: "Match Groups",
-                    value: "\(profile.totalMatches)",
-                    detail: "MVP total matches count every resolved match group across cascade steps."
+                    overline: "Matches",
+                    value: "\(profile.totalMatches)"
                 )
 
-                SecondaryButton(title: "Refresh Stats") {
+                SecondaryButton(title: "Refresh") {
                     Task {
                         await viewModel.loadProfile()
                     }
@@ -110,40 +80,12 @@ struct ProfileView: View {
             InlineStatusMessage(message: "No profile data is available for the current user.")
         }
     }
-
-    private var profileSubtitle: String {
-        if router.isGuest {
-            return authService.isRemoteAuthAvailable
-                ? "Guest stats are stored locally for the current anonymous session."
-                : "Guest stats are stored locally for the current on-device guest session."
-        }
-
-        return "Completed games now update your Firestore-backed profile stats automatically."
-    }
-
-    private var sectionSubtitle: String {
-        if viewModel.isLoading {
-            return "Loading the current profile snapshot."
-        }
-
-        if viewModel.errorMessage != nil {
-            return "A profile error occurred."
-        }
-
-        if router.isGuest {
-            return authService.isRemoteAuthAvailable
-                ? "Guest mode uses local stats for the active anonymous session."
-                : "Guest mode uses local stats for the active on-device session."
-        }
-
-        return "Registered accounts show the latest saved stats from Firestore."
-    }
 }
 
 private struct ProfileStatBlock: View {
     let overline: String
     let value: String
-    let detail: String
+    var detail: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
@@ -153,10 +95,12 @@ private struct ProfileStatBlock: View {
             Text(value)
                 .font(AppTypography.bodyStrong)
                 .foregroundStyle(AppColors.textPrimary)
-            Text(detail)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let detail, !detail.isEmpty {
+                Text(detail)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, AppSpacing.xSmall)

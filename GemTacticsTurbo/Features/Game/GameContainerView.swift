@@ -24,14 +24,6 @@ struct GameContainerView: View {
         )
     }
 
-    private var gameSubtitle: String {
-        "SpriteKit renders the board while the round state, score, timer, and swap validation stay synchronized through the SwiftUI view model."
-    }
-
-    private var scoreMultiplierText: String {
-        String(format: "%.1f", difficulty.scoreMultiplier)
-    }
-
     private var timeText: String {
         let minutes = viewModel.session.remainingTime / 60
         let seconds = viewModel.session.remainingTime % 60
@@ -54,15 +46,7 @@ struct GameContainerView: View {
 
     var body: some View {
         ZStack {
-            ScreenContainer(
-                title: "\(difficulty.displayName) Match",
-                subtitle: gameSubtitle
-            ) {
-                SectionHeader(
-                    title: "HUD",
-                    subtitle: "Timer, score, moves, and combo state update here while the board interaction stays active below."
-                )
-
+            ScreenContainer(title: difficulty.displayName) {
                 LazyVGrid(
                     columns: [
                         GridItem(.flexible(), spacing: AppSpacing.medium),
@@ -73,28 +57,21 @@ struct GameContainerView: View {
                     StatCard(
                         title: "Score",
                         value: "\(viewModel.session.score)",
-                        detail: "Target: \(viewModel.session.targetScore)"
+                        detail: "Goal \(viewModel.session.targetScore)"
                     )
 
                     StatCard(
                         title: "Moves",
-                        value: "\(viewModel.session.remainingMoves)",
-                        detail: "Multiplier: \(scoreMultiplierText)x"
+                        value: "\(viewModel.session.remainingMoves)"
                     )
 
                     StatCard(
-                        title: "Timer",
-                        value: timeText,
-                        detail: "Combo Chain: \(viewModel.session.comboChain)"
+                        title: "Time",
+                        value: timeText
                     )
 
                     hudButton
                 }
-
-                SectionHeader(
-                    title: "Board",
-                    subtitle: "Tap a gem, then tap an adjacent gem to swap. Invalid swaps do not cost a move."
-                )
 
                 SpriteView(
                     scene: sceneCoordinator.scene,
@@ -118,19 +95,9 @@ struct GameContainerView: View {
                 )
 
                 GlassPanel {
-                    VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
-                        Text("Round Status")
-                            .font(AppTypography.sectionTitle)
-                            .foregroundStyle(AppColors.brandGradientText)
-
-                        Text(viewModel.statusMessage)
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.textPrimary)
-
-                        Text("Current board: \(viewModel.session.rowCount)x\(viewModel.session.columnCount)")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.textTertiary)
-                    }
+                    Text(viewModel.statusMessage)
+                        .font(AppTypography.bodyStrong)
+                        .foregroundStyle(AppColors.textPrimary)
                 }
 
                 VStack(spacing: AppSpacing.stackTight) {
@@ -139,7 +106,7 @@ struct GameContainerView: View {
                     }
                     .disabled(viewModel.isPreparingBoard)
 
-                    PrimaryButton(title: "Back to Home") {
+                    PrimaryButton(title: "Home") {
                         leaveGame()
                     }
                 }
@@ -152,8 +119,7 @@ struct GameContainerView: View {
                     .ignoresSafeArea()
 
                 BoardLoadingOverlay(
-                    title: "Building Board",
-                    message: viewModel.loadingMessage ?? "Preparing board..."
+                    title: "Loading"
                 )
                 .padding(24)
             }
@@ -257,7 +223,7 @@ struct GameContainerView: View {
 
 private struct BoardLoadingOverlay: View {
     let title: String
-    let message: String
+    let message: String? = nil
 
     var body: some View {
         VStack(spacing: AppSpacing.large) {
@@ -269,10 +235,12 @@ private struct BoardLoadingOverlay: View {
                 .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
 
-            Text(message)
-                .font(AppTypography.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(AppColors.textSecondary)
+            if let message, !message.isEmpty {
+                Text(message)
+                    .font(AppTypography.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(AppColors.textSecondary)
+            }
         }
         .padding(AppSpacing.large)
         .frame(maxWidth: 340)

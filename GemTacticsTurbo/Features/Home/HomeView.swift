@@ -9,41 +9,21 @@ struct HomeView: View {
     private var sessionPresentation: AuthSessionPresentation {
         AuthSessionPresentation.make(
             isGuest: router.isGuest,
-            isRemoteAuthAvailable: authService.isRemoteAuthAvailable,
             isSigningOut: isSigningOut
         )
     }
 
     var body: some View {
-        ScreenContainer(
-            title: "Gem Tactics Turbo",
-            subtitle: sessionPresentation.homeSubtitle
-        ) {
+        ScreenContainer(title: "Gem Tactics Turbo") {
             VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
                 GlassPanel(elevated: true) {
-                    VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
-                        Text("Home")
+                    VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
+                        Text("Session")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.textMuted)
+                        Text(sessionPresentation.sessionStatusTitle)
                             .font(AppTypography.sectionTitle)
-                            .foregroundStyle(AppColors.brandGradientText)
-
-                        Text("Jump into a round, review your stats, or manage the current session.")
-                            .font(AppTypography.label)
-                            .foregroundStyle(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                            Text("SESSION")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.textMuted)
-                            Text(sessionPresentation.sessionStatusTitle)
-                                .font(AppTypography.bodyStrong)
-                                .foregroundStyle(AppColors.textPrimary)
-                            Text(sessionPresentation.homeSessionDetail)
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.vertical, AppSpacing.xSmall)
+                            .foregroundStyle(AppColors.textPrimary)
 
                         if let signOutErrorMessage {
                             InlineStatusMessage(message: signOutErrorMessage)
@@ -53,7 +33,7 @@ struct HomeView: View {
 
                 GlassPanel {
                     VStack(spacing: AppSpacing.stackTight) {
-                        PrimaryButton(title: "Game Mode") {
+                        PrimaryButton(title: "Play") {
                             router.show(.gameMode)
                         }
 

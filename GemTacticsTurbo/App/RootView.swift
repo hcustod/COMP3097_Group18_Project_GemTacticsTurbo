@@ -63,15 +63,7 @@ struct RootView: View {
 
 private struct LaunchingPlaceholderView: View {
     var body: some View {
-        ScreenContainer(
-            title: "Gem Tactics Turbo",
-            subtitle: "Checking the current session and preparing the app flow."
-        ) {
-            SectionHeader(
-                title: "Launching",
-                subtitle: "Local builds without Firebase configuration now fall straight into guest play so the full MVP remains usable."
-            )
-
+        ScreenContainer(title: "Gem Tactics Turbo") {
             ProgressView()
                 .tint(AppColors.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)

@@ -11,42 +11,30 @@ struct HowToPlayView: View {
     @ObservedObject var router: AppRouter
 
     var body: some View {
-        ScreenContainer(
-            title: "How To Play",
-            subtitle: "Learn the core match-3 loop before you jump into a timed round."
-        ) {
-            SectionHeader(
-                title: "Rules",
-                subtitle: "Swap adjacent gems, make matches of three or more, and reach the target score before time or moves run out."
-            )
-
+        ScreenContainer(title: "How To Play") {
             VStack(spacing: AppSpacing.medium) {
                 StatCard(
                     title: "Swap",
-                    value: "Adjacent Only",
-                    detail: "Tap one gem, then tap a neighboring gem. Invalid swaps animate and do not consume a move."
+                    value: "Adjacent"
                 )
 
                 StatCard(
                     title: "Match",
-                    value: "3 Or More",
-                    detail: "Horizontal and vertical matches clear gems, trigger gravity, and can create cascades."
+                    value: "3+"
                 )
 
                 StatCard(
-                    title: "Score",
-                    value: "Combos Matter",
-                    detail: "Longer matches and deeper cascades award more points, scaled by the selected difficulty."
+                    title: "Goal",
+                    value: "Hit Target"
                 )
 
                 StatCard(
-                    title: "Win Condition",
-                    value: "Hit The Target",
-                    detail: "Reach the difficulty target score before the timer reaches zero or you run out of moves."
+                    title: "Limit",
+                    value: "Moves & Time"
                 )
             }
 
-            SecondaryButton(title: "Back to Home") {
+            SecondaryButton(title: "Home") {
                 router.show(.home)
             }
         }

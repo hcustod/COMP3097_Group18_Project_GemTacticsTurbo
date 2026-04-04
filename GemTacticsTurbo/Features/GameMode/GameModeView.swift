@@ -11,21 +11,7 @@ struct GameModeView: View {
     @ObservedObject var router: AppRouter
 
     var body: some View {
-        ScreenContainer(
-            title: "Game Mode",
-            subtitle: "Choose a difficulty and jump straight into a live match-3 round with the selected rules."
-        ) {
-            SectionHeader(
-                title: "Mode Select",
-                subtitle: "Each option is generated from the centralized difficulty model so the rules stay consistent across the app."
-            )
-
-            StatCard(
-                title: "Selection Flow",
-                value: "Difficulty Ready",
-                detail: "Pick a difficulty to start a live board session with the matching move limit, timer, and target score."
-            )
-
+        ScreenContainer(title: "Play") {
             VStack(spacing: AppSpacing.medium) {
                 ForEach(Difficulty.allCases, id: \.self) { difficulty in
                     DifficultyCard(difficulty: difficulty) {
@@ -33,7 +19,7 @@ struct GameModeView: View {
                     }
                 }
 
-                SecondaryButton(title: "Back to Home") {
+                SecondaryButton(title: "Home") {
                     router.show(.home)
                 }
             }
@@ -47,10 +33,6 @@ private struct DifficultyCard: View {
     let difficulty: Difficulty
     let action: () -> Void
 
-    private var multiplierText: String {
-        String(format: "%.1f", difficulty.scoreMultiplier)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             Text(difficulty.displayName)
@@ -63,11 +45,7 @@ private struct DifficultyCard: View {
                 difficultyDetail(title: "Target", value: "\(difficulty.targetScore)")
             }
 
-            Text("Score multiplier: \(multiplierText)x")
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.textSecondary)
-
-            PrimaryButton(title: "Play \(difficulty.displayName)") {
+            PrimaryButton(title: "Play") {
                 action()
             }
         }

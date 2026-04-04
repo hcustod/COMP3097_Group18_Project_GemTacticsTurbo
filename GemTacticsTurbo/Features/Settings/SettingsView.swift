@@ -10,34 +10,22 @@ struct SettingsView: View {
     private var sessionPresentation: AuthSessionPresentation {
         AuthSessionPresentation.make(
             isGuest: router.isGuest,
-            isRemoteAuthAvailable: authService.isRemoteAuthAvailable,
             isSigningOut: isSigningOut
         )
     }
 
     var body: some View {
-        ScreenContainer(
-            title: "Settings",
-            subtitle: authService.isRemoteAuthAvailable
-                ? "Preferences persist locally on this device, while account actions stay tied to the current auth session."
-                : "Preferences and guest-session testing both run locally in this build."
-        ) {
+        ScreenContainer(title: "Settings") {
             VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
                 GlassPanel {
                     VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
-                        Text("Preferences")
+                        Text("Audio")
                             .font(AppTypography.sectionTitle)
                             .foregroundStyle(AppColors.brandGradientText)
-
-                        Text("Audio and feedback toggles are stored locally with UserDefaults-backed settings.")
-                            .font(AppTypography.label)
-                            .foregroundStyle(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
 
                         VStack(spacing: 0) {
                             SettingsToggleRow(
                                 title: "Sound Effects",
-                                detail: "Controls gem swap and game event sound cues.",
                                 isOn: $settingsStore.soundEnabled
                             )
 
@@ -47,7 +35,6 @@ struct SettingsView: View {
 
                             SettingsToggleRow(
                                 title: "Music",
-                                detail: "Keeps the background soundtrack enabled in the MVP build.",
                                 isOn: $settingsStore.musicEnabled
                             )
 
@@ -57,7 +44,6 @@ struct SettingsView: View {
 
                             SettingsToggleRow(
                                 title: "Haptics",
-                                detail: "Enables tactile feedback for supported devices.",
                                 isOn: $settingsStore.hapticsEnabled
                             )
                         }
@@ -70,22 +56,13 @@ struct SettingsView: View {
                             .font(AppTypography.sectionTitle)
                             .foregroundStyle(AppColors.brandGradientText)
 
-                        Text(sessionPresentation.settingsAccountSubtitle)
-                            .font(AppTypography.label)
-                            .foregroundStyle(AppColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
                         VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
-                            Text("CURRENT SESSION")
+                            Text("Session")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textMuted)
                             Text(sessionPresentation.sessionStatusTitle)
                                 .font(AppTypography.bodyStrong)
                                 .foregroundStyle(AppColors.textPrimary)
-                            Text(sessionPresentation.settingsSessionDetail)
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.vertical, AppSpacing.xSmall)
 
@@ -104,7 +81,7 @@ struct SettingsView: View {
                                 }
                             }
 
-                            SecondaryButton(title: "Back to Home") {
+                            SecondaryButton(title: "Home") {
                                 router.show(.home)
                             }
 
@@ -136,20 +113,13 @@ struct SettingsView: View {
 
 private struct SettingsToggleRow: View {
     let title: String
-    let detail: String
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                Text(title)
-                    .font(AppTypography.bodyStrong)
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Text(detail)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-            }
+            Text(title)
+                .font(AppTypography.bodyStrong)
+                .foregroundStyle(AppColors.textPrimary)
         }
         .tint(AppColors.accentPrimary)
         .padding(.vertical, AppSpacing.xSmall)

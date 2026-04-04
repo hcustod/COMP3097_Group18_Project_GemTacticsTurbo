@@ -14,24 +14,19 @@ struct PauseOverlayView: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.large) {
-            Text("Game Paused")
+            Text("Paused")
                 .font(AppTypography.screenTitle)
                 .foregroundStyle(AppColors.textPrimary)
-
-            Text("Timer countdown and swap input are suspended until you resume.")
-                .font(AppTypography.body)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(AppColors.textSecondary)
 
             PrimaryButton(title: "Resume") {
                 onResume()
             }
 
-            SecondaryButton(title: "Restart Round") {
+            SecondaryButton(title: "Restart") {
                 onRestart()
             }
 
-            SecondaryButton(title: "Quit to Home") {
+            SecondaryButton(title: "Home") {
                 onQuit()
             }
         }
