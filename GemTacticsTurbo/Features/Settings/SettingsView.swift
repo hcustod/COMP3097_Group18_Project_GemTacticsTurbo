@@ -7,6 +7,13 @@ struct SettingsView: View {
     @State private var signOutErrorMessage: String?
 
     private let authService = AuthService.shared
+    private var sessionPresentation: AuthSessionPresentation {
+        AuthSessionPresentation.make(
+            isGuest: router.isGuest,
+            isRemoteAuthAvailable: authService.isRemoteAuthAvailable,
+            isSigningOut: isSigningOut
+        )
+    }
 
     var body: some View {
         ScreenContainer(
@@ -63,22 +70,22 @@ struct SettingsView: View {
                             .font(AppTypography.sectionTitle)
                             .foregroundStyle(AppColors.brandGradientText)
 
-                        Text(accountDescription)
-                        .font(AppTypography.label)
-                        .foregroundStyle(AppColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        Text(sessionPresentation.settingsAccountSubtitle)
+                            .font(AppTypography.label)
+                            .foregroundStyle(AppColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         VStack(alignment: .leading, spacing: AppSpacing.stackTight) {
                             Text("CURRENT SESSION")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textMuted)
-                            Text(router.isGuest ? "Guest Session" : "Registered Session")
+                            Text(sessionPresentation.sessionStatusTitle)
                                 .font(AppTypography.bodyStrong)
                                 .foregroundStyle(AppColors.textPrimary)
-                            Text(currentSessionDetail)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            Text(sessionPresentation.settingsSessionDetail)
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.vertical, AppSpacing.xSmall)
 
@@ -88,7 +95,9 @@ struct SettingsView: View {
 
                         VStack(spacing: AppSpacing.stackTight) {
                             if router.isGuest {
-                                InlineStatusMessage(message: "Guest sessions do not offer account deletion. Sign out to end the current session.")
+                                if let deletionMessage = sessionPresentation.settingsDeletionMessage {
+                                    InlineStatusMessage(message: deletionMessage)
+                                }
                             } else {
                                 PrimaryButton(title: "Delete Account") {
                                     router.show(.deleteAccount)
@@ -99,7 +108,7 @@ struct SettingsView: View {
                                 router.show(.home)
                             }
 
-                            SecondaryButton(title: signOutButtonTitle) {
+                            SecondaryButton(title: sessionPresentation.signOutButtonTitle) {
                                 signOut()
                             }
                             .disabled(isSigningOut)
@@ -122,34 +131,6 @@ struct SettingsView: View {
         } catch {
             signOutErrorMessage = authService.errorMessage(for: error)
         }
-    }
-
-    private var signOutButtonTitle: String {
-        if isSigningOut {
-            return authService.isRemoteAuthAvailable ? "Signing Out..." : "Ending Session..."
-        }
-
-        return authService.isRemoteAuthAvailable ? "Sign Out" : "End Local Session"
-    }
-
-    private var accountDescription: String {
-        if router.isGuest {
-            return authService.isRemoteAuthAvailable
-                ? "Guest sessions can sign out, but they do not expose permanent account deletion."
-                : "Local guest sessions can end the current session, but they do not expose permanent account deletion."
-        }
-
-        return "Registered accounts can sign out or permanently delete the current account."
-    }
-
-    private var currentSessionDetail: String {
-        if router.isGuest {
-            return authService.isRemoteAuthAvailable
-                ? "Anonymous authentication keeps leaderboard access simple without a permanent profile."
-                : "This on-device guest session keeps local profile stats and leaderboard testing available without Firebase setup."
-        }
-
-        return "This account can load profile stats, save scores, and be deleted from Firebase Auth."
     }
 }
 
