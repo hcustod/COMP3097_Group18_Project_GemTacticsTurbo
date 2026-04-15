@@ -13,6 +13,7 @@ enum AppTypography {
     static let sectionTitle = Font.system(.title3, design: .rounded).weight(.semibold)
     static let body = Font.system(.body, design: .rounded)
     static let bodyStrong = Font.system(.body, design: .rounded).weight(.semibold)
+    static let buttonArcade = Font.system(size: 18, weight: .black, design: .rounded)
     static let label = Font.system(.subheadline, design: .rounded).weight(.medium)
     static let caption = Font.system(.callout, design: .rounded)
     static let hudLabel = Font.system(.caption2, design: .rounded).weight(.medium)

@@ -20,13 +20,13 @@ enum AppColors {
         )
     }
 
-    static let glassFill = Color.white.opacity(0.05)
-    static let glassFillElevated = Color.white.opacity(0.10)
-    static let surface = Color.white.opacity(0.08)
-    static let surfaceElevated = Color.white.opacity(0.14)
-    static let glassBorder = Color.white.opacity(0.10)
-    static let glassBorderStrong = Color.white.opacity(0.20)
-    static let stroke = glassBorder
+    static let glassFill = Color(red: 38 / 255, green: 44 / 255, blue: 96 / 255).opacity(0.56)
+    static let glassFillElevated = Color(red: 58 / 255, green: 69 / 255, blue: 132 / 255).opacity(0.70)
+    static let surface = Color(red: 31 / 255, green: 37 / 255, blue: 82 / 255).opacity(0.84)
+    static let surfaceElevated = Color(red: 53 / 255, green: 63 / 255, blue: 120 / 255).opacity(0.94)
+    static let glassBorder = Color(red: 80 / 255, green: 186 / 255, blue: 1.0).opacity(0.28)
+    static let glassBorderStrong = Color(red: 1.0, green: 192 / 255, blue: 76 / 255).opacity(0.52)
+    static let stroke = Color(red: 92 / 255, green: 160 / 255, blue: 1.0).opacity(0.34)
 
     static let overlayScrim = Color.black.opacity(0.60)
     static let modalPanel = backgroundMid
@@ -40,6 +40,20 @@ enum AppColors {
 
     static let accentPrimary = Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255)
     static let accentSecondary = Color(red: 96 / 255, green: 165 / 255, blue: 250 / 255)
+
+    static let arcadeInk = Color(red: 17 / 255, green: 14 / 255, blue: 37 / 255)
+    static let arcadePanelTop = Color(red: 66 / 255, green: 79 / 255, blue: 150 / 255)
+    static let arcadePanelBottom = Color(red: 28 / 255, green: 29 / 255, blue: 79 / 255)
+    static let arcadePanelGlow = Color(red: 77 / 255, green: 203 / 255, blue: 1.0)
+    static let arcadeWarmEdge = Color(red: 1.0, green: 188 / 255, blue: 70 / 255)
+    static let arcadePrimaryTop = Color(red: 1.0, green: 231 / 255, blue: 100 / 255)
+    static let arcadePrimaryMid = Color(red: 1.0, green: 150 / 255, blue: 35 / 255)
+    static let arcadePrimaryBottom = Color(red: 199 / 255, green: 40 / 255, blue: 12 / 255)
+    static let arcadeSecondaryTop = Color(red: 148 / 255, green: 249 / 255, blue: 1.0)
+    static let arcadeSecondaryMid = Color(red: 28 / 255, green: 203 / 255, blue: 211 / 255)
+    static let arcadeSecondaryBottom = Color(red: 17 / 255, green: 82 / 255, blue: 178 / 255)
+    static let arcadeBevelHighlight = Color.white.opacity(0.46)
+    static let arcadeBevelShadow = Color.black.opacity(0.46)
 
     private static let accentPurple = Color(red: 147 / 255, green: 51 / 255, blue: 234 / 255)
     private static let accentPink = Color(red: 219 / 255, green: 39 / 255, blue: 119 / 255)

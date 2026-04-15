@@ -72,7 +72,9 @@ final class GameSceneCoordinator: ObservableObject {
         if feedback.wasValid {
             scene.animateValidSwap(
                 swap,
-                updatedBoard: feedback.resultingBoard
+                swappedBoard: feedback.swappedBoard ?? feedback.resultingBoard,
+                cascadeSteps: feedback.cascadeSteps,
+                finalBoard: feedback.resultingBoard
             ) { [weak self] in
                 Task { @MainActor [weak self] in
                     self?.finishSwapAnimation(currentBoard: feedback.resultingBoard)

@@ -34,29 +34,27 @@ private struct DifficultyCard: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text(difficulty.displayName)
-                .font(AppTypography.sectionTitle)
-                .foregroundStyle(AppColors.textPrimary)
+        ZStack {
+            ArcadePanelSurface(elevated: true, cornerRadius: AppSpacing.cornerRadius)
 
-            HStack(spacing: AppSpacing.medium) {
-                difficultyDetail(title: "Moves", value: "\(difficulty.moveLimit)")
-                difficultyDetail(title: "Time", value: "\(difficulty.timeLimit)s")
-                difficultyDetail(title: "Target", value: "\(difficulty.targetScore)")
-            }
+            VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                Text(difficulty.displayName)
+                    .font(AppTypography.sectionTitle)
+                    .foregroundStyle(AppColors.textPrimary)
 
-            PrimaryButton(title: "Play") {
-                action()
+                HStack(spacing: AppSpacing.medium) {
+                    difficultyDetail(title: "Moves", value: "\(difficulty.moveLimit)")
+                    difficultyDetail(title: "Time", value: "\(difficulty.timeLimit)s")
+                    difficultyDetail(title: "Target", value: "\(difficulty.targetScore)")
+                }
+
+                PrimaryButton(title: "Play") {
+                    action()
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.cardPadding)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                .stroke(AppColors.stroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
     }
 
     private func difficultyDetail(title: String, value: String) -> some View {

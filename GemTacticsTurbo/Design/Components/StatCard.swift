@@ -13,28 +13,26 @@ struct StatCard: View {
     var detail: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(title.uppercased())
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.textMuted)
+        ZStack {
+            ArcadePanelSurface(cornerRadius: AppSpacing.cornerRadius)
 
-            Text(value)
-                .font(AppTypography.statValue)
-                .foregroundStyle(AppColors.textPrimary)
+            VStack(alignment: .leading, spacing: AppSpacing.small) {
+                Text(title.uppercased())
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textMuted)
 
-            if let detail {
-                Text(detail)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.textSecondary)
+                Text(value)
+                    .font(AppTypography.statValue)
+                    .foregroundStyle(AppColors.textPrimary)
+
+                if let detail {
+                    Text(detail)
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.textSecondary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.cardPadding)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.cardPadding)
-        .background(AppColors.surfaceElevated)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                .stroke(AppColors.stroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
     }
 }

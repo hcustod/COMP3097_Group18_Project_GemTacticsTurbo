@@ -24,6 +24,8 @@ struct BoardEngine: BoardEngineing, Sendable {
         let availableSwapCount: Int
         let boardWasRepaired: Bool
         let metPlayabilityThreshold: Bool
+        let boardAfterSwap: GameSession.Board?
+        let cascadeSteps: [CascadeResolver.Step]
 
         init(
             board: GameSession.Board,
@@ -33,7 +35,9 @@ struct BoardEngine: BoardEngineing, Sendable {
             totalMatchGroups: Int,
             availableSwapCount: Int = 0,
             boardWasRepaired: Bool = false,
-            metPlayabilityThreshold: Bool = true
+            metPlayabilityThreshold: Bool = true,
+            boardAfterSwap: GameSession.Board? = nil,
+            cascadeSteps: [CascadeResolver.Step] = []
         ) {
             self.board = board
             self.wasValid = wasValid
@@ -43,6 +47,8 @@ struct BoardEngine: BoardEngineing, Sendable {
             self.availableSwapCount = availableSwapCount
             self.boardWasRepaired = boardWasRepaired
             self.metPlayabilityThreshold = metPlayabilityThreshold
+            self.boardAfterSwap = boardAfterSwap
+            self.cascadeSteps = cascadeSteps
         }
     }
 
@@ -93,7 +99,9 @@ struct BoardEngine: BoardEngineing, Sendable {
             totalMatchGroups: cascadeResult.totalMatchGroups,
             availableSwapCount: playabilityRepair.availableSwapCount,
             boardWasRepaired: playabilityRepair.wasRepaired,
-            metPlayabilityThreshold: playabilityRepair.metMinimumSwapRequirement
+            metPlayabilityThreshold: playabilityRepair.metMinimumSwapRequirement,
+            boardAfterSwap: swappedBoard,
+            cascadeSteps: cascadeResult.steps
         )
     }
 }

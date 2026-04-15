@@ -214,7 +214,7 @@ final class GameViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.session.score, Difficulty.easy.targetScore)
     }
 
-    func testAttemptSwapIsIgnoredWhileBoardIsPreparing() {
+    func testAttemptSwapIsIgnoredWhileBoardIsPreparing() async {
         let initialBoard = makeBoard([
             [.ruby, .sapphire],
             [.emerald, .topaz]
@@ -261,7 +261,7 @@ final class GameViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.session.remainingTime, 0)
     }
 
-    func testAppRouterDoesNotClearMainPathWhenAuthStateIsUnchanged() {
+    func testAppRouterDoesNotClearMainPathWhenAuthStateIsUnchanged() async {
         let router = AppRouter()
         let guestUser = AuthUser(
             uid: "guest-user",

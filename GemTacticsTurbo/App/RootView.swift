@@ -63,10 +63,24 @@ struct RootView: View {
 
 private struct LaunchingPlaceholderView: View {
     var body: some View {
-        ScreenContainer(title: "Gem Tactics Turbo") {
-            ProgressView()
-                .tint(AppColors.accentPrimary)
-                .frame(maxWidth: .infinity, alignment: .center)
+        ScreenContainer(scrollEnabled: false) {
+            VStack(spacing: AppSpacing.large) {
+                Spacer(minLength: 0)
+
+                GemTacticsLogoView(
+                    variant: .launch,
+                    maxWidth: 340
+                )
+                .frame(maxWidth: .infinity)
+
+                Text("Loading the cabinet...")
+                    .font(AppTypography.bodyStrong)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("Launching")
         .navigationBarTitleDisplayMode(.inline)

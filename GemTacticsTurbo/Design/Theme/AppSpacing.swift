@@ -13,7 +13,7 @@ enum AppSpacing {
     static let xLarge: CGFloat = 32
     static let cardPadding: CGFloat = 20
     static let cornerRadius: CGFloat = 20
-    static let buttonHeight: CGFloat = 54
+    static let buttonHeight: CGFloat = 60
 
     static let pagePadding: CGFloat = 24
     static let sectionSpacing: CGFloat = 32

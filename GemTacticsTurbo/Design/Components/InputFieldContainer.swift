@@ -39,12 +39,9 @@ struct InputFieldContainer<Content: View>: View {
                 .foregroundStyle(AppColors.textPrimary)
                 .padding(.horizontal, AppSpacing.medium)
                 .frame(maxWidth: .infinity, minHeight: AppSpacing.buttonHeight, alignment: .leading)
-                .background(AppColors.surfaceElevated)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
-                        .stroke(AppColors.stroke, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous))
+                .background {
+                    ArcadePanelSurface(cornerRadius: AppSpacing.cornerRadius)
+                }
         }
     }
 }

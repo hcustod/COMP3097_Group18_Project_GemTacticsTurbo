@@ -19,6 +19,8 @@ final class GameViewModel: ObservableObject {
 
         let swap: Swap
         let outcome: Outcome
+        let swappedBoard: GameSession.Board?
+        let cascadeSteps: [CascadeResolver.Step]
         let resultingBoard: GameSession.Board
 
         var wasProcessed: Bool {
@@ -133,6 +135,8 @@ final class GameViewModel: ObservableObject {
             return SwapFeedback(
                 swap: swap,
                 outcome: .ignored,
+                swappedBoard: nil,
+                cascadeSteps: [],
                 resultingBoard: session.board
             )
         }
@@ -149,6 +153,8 @@ final class GameViewModel: ObservableObject {
             return SwapFeedback(
                 swap: swap,
                 outcome: .invalid,
+                swappedBoard: nil,
+                cascadeSteps: [],
                 resultingBoard: session.board
             )
         }
@@ -170,6 +176,8 @@ final class GameViewModel: ObservableObject {
         return SwapFeedback(
             swap: swap,
             outcome: .valid,
+            swappedBoard: result.boardAfterSwap,
+            cascadeSteps: result.cascadeSteps,
             resultingBoard: session.board
         )
     }
