@@ -9,6 +9,7 @@ import SwiftUI
 
 struct RootView: View {
     @StateObject private var router = AppRouter()
+    @StateObject private var settingsStore = SettingsStore()
     @State private var hasBootstrappedSession = false
     @State private var isBootstrappingSession = false
     private let authService = AuthService.shared
@@ -24,6 +25,7 @@ struct RootView: View {
                 MainFlowView(router: router)
             }
         }
+        .environmentObject(settingsStore)
         .tint(AppColors.accentPrimary)
         .preferredColorScheme(.dark)
         .task {

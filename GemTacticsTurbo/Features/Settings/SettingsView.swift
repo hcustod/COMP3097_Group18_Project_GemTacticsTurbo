@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var router: AppRouter
-    @StateObject private var settingsStore = SettingsStore()
+    @EnvironmentObject private var settingsStore: SettingsStore
     @State private var isSigningOut = false
     @State private var signOutErrorMessage: String?
 

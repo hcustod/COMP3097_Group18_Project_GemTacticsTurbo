@@ -10,6 +10,7 @@ import SwiftUI
 
 struct GameContainerView: View {
     @ObservedObject var router: AppRouter
+    @EnvironmentObject private var settingsStore: SettingsStore
     let difficulty: Difficulty
     @StateObject private var viewModel: GameViewModel
     @StateObject private var sceneCoordinator: GameSceneCoordinator
@@ -110,6 +111,7 @@ struct GameContainerView: View {
             }
         }
         .onAppear {
+            sceneCoordinator.configureHapticsEnabled { settingsStore.hapticsEnabled }
             sceneCoordinator.configureSwapHandler { from, to in
                 viewModel.attemptSwap(from: from, to: to)
             }
@@ -117,6 +119,9 @@ struct GameContainerView: View {
             sceneCoordinator.setInteractionEnabled(
                 viewModel.session.isActive && !viewModel.isPreparingBoard
             )
+        }
+        .onChange(of: settingsStore.hapticsEnabled) { _, _ in
+            sceneCoordinator.configureHapticsEnabled { settingsStore.hapticsEnabled }
         }
         .task {
             await viewModel.prepareInitialBoardIfNeeded()
@@ -129,10 +134,17 @@ struct GameContainerView: View {
                 viewModel.session.isActive && !viewModel.isPreparingBoard
             )
         }
-        .onChange(of: viewModel.session.isGameOver) { _, _ in
+        .onChange(of: viewModel.session.isGameOver) { _, isGameOver in
             sceneCoordinator.setInteractionEnabled(
                 viewModel.session.isActive && !viewModel.isPreparingBoard
             )
+            if isGameOver, settingsStore.hapticsEnabled {
+                if viewModel.session.isWin {
+                    HapticsManager.notification(.success)
+                } else {
+                    HapticsManager.notification(.error)
+                }
+            }
         }
         .onChange(of: viewModel.isPreparingBoard) { _, _ in
             sceneCoordinator.setInteractionEnabled(

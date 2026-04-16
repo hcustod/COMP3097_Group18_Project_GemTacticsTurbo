@@ -14,9 +14,18 @@ final class GameSceneCoordinator: ObservableObject {
     let scene: GameScene
 
     private var swapHandler: ((BoardPosition, BoardPosition) -> GameViewModel.SwapFeedback)?
+    private var hapticsEnabled: () -> Bool = { true }
     private var desiredInteractionState = true
     private var isAnimatingSwap = false
     private var pendingBoard: GameSession.Board?
+
+    private enum PendingSwapHaptic {
+        case none
+        case validMatch
+        case invalidSwap
+    }
+
+    private var pendingSwapHaptic: PendingSwapHaptic = .none
 
     init(board: GameSession.Board? = nil) {
         let scene = GameScene(size: Self.sceneSize(for: board))
@@ -33,6 +42,10 @@ final class GameSceneCoordinator: ObservableObject {
         _ swapHandler: @escaping (BoardPosition, BoardPosition) -> GameViewModel.SwapFeedback
     ) {
         self.swapHandler = swapHandler
+    }
+
+    func configureHapticsEnabled(_ provider: @escaping () -> Bool) {
+        hapticsEnabled = provider
     }
 
     func render(board: GameSession.Board) {
@@ -70,6 +83,7 @@ final class GameSceneCoordinator: ObservableObject {
         scene.isBoardInteractionEnabled = false
 
         if feedback.wasValid {
+            pendingSwapHaptic = .validMatch
             scene.animateValidSwap(
                 swap,
                 swappedBoard: feedback.swappedBoard ?? feedback.resultingBoard,
@@ -83,6 +97,7 @@ final class GameSceneCoordinator: ObservableObject {
             return
         }
 
+        pendingSwapHaptic = .invalidSwap
         scene.animateInvalidSwap(swap) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.finishSwapAnimation(currentBoard: nil)
@@ -92,6 +107,18 @@ final class GameSceneCoordinator: ObservableObject {
 
     private func finishSwapAnimation(currentBoard: GameSession.Board?) {
         isAnimatingSwap = false
+
+        if hapticsEnabled() {
+            switch pendingSwapHaptic {
+            case .validMatch:
+                HapticsManager.impact(.medium)
+            case .invalidSwap:
+                HapticsManager.impact(.light)
+            case .none:
+                break
+            }
+        }
+        pendingSwapHaptic = .none
 
         if let pendingBoard, pendingBoard != currentBoard {
             scene.render(board: pendingBoard)
