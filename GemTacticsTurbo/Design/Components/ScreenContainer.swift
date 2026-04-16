@@ -4,17 +4,23 @@ struct ScreenContainer<Content: View>: View {
     let title: String?
     let subtitle: String?
     let scrollEnabled: Bool
+    let horizontalPadding: CGFloat
+    let verticalPadding: CGFloat
     private let content: Content
 
     init(
         title: String? = nil,
         subtitle: String? = nil,
         scrollEnabled: Bool = true,
+        horizontalPadding: CGFloat = AppSpacing.pagePadding,
+        verticalPadding: CGFloat = AppSpacing.pagePadding,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.scrollEnabled = scrollEnabled
+        self.horizontalPadding = horizontalPadding
+        self.verticalPadding = verticalPadding
         self.content = content()
     }
 
@@ -29,14 +35,14 @@ struct ScreenContainer<Content: View>: View {
             if scrollEnabled {
                 ScrollView(showsIndicators: false) {
                     containerBody
-                        .padding(.horizontal, AppSpacing.pagePadding)
-                        .padding(.vertical, AppSpacing.pagePadding)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.vertical, verticalPadding)
                 }
             } else {
                 containerBody
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .padding(.horizontal, AppSpacing.pagePadding)
-                    .padding(.vertical, AppSpacing.pagePadding)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.vertical, verticalPadding)
             }
         }
     }

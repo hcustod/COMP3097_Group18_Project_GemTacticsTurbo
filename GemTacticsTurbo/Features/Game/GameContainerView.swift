@@ -46,7 +46,11 @@ struct GameContainerView: View {
 
     var body: some View {
         ZStack {
-            ScreenContainer(scrollEnabled: false) {
+            ScreenContainer(
+                scrollEnabled: false,
+                horizontalPadding: AppSpacing.xSmall,
+                verticalPadding: AppSpacing.xSmall
+            ) {
                 GeometryReader { geometry in
                     ViewThatFits(in: .vertical) {
                         gameContent(in: geometry.size, compact: false)
@@ -56,7 +60,7 @@ struct GameContainerView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle("Game")
+            .navigationTitle(difficulty.displayName)
             .navigationBarTitleDisplayMode(.inline)
 
             if viewModel.isPreparingBoard {
@@ -143,39 +147,33 @@ struct GameContainerView: View {
     @ViewBuilder
     private func gameContent(in size: CGSize, compact: Bool) -> some View {
         let isLandscape = size.width > size.height
-        let spacing = compact ? AppSpacing.small : AppSpacing.medium
-        let boardHeightRatio: CGFloat = compact ? 0.40 : 0.50
+        let spacing = compact ? 5.0 : AppSpacing.xSmall
 
         Group {
             if isLandscape {
-                HStack(alignment: .top, spacing: spacing) {
-                    VStack(alignment: .leading, spacing: spacing) {
-                        gameHeader(compact: compact)
-                        hudGrid
-                        statusPanel
-                        controlStack(isLandscape: true)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(width: max(min(size.width * 0.34, 360), 280), alignment: .topLeading)
-
+                HStack(alignment: .center, spacing: spacing) {
                     boardSurface
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    sideGameBar(compact: compact)
+                        .frame(
+                            width: max(
+                                min(size.width * 0.21, 210),
+                                compact ? 150 : 172
+                            )
+                        )
+                        .frame(maxHeight: .infinity)
                 }
             } else {
-                VStack(alignment: .leading, spacing: spacing) {
-                    gameHeader(compact: compact)
-                    hudGrid
+                VStack(alignment: .center, spacing: spacing) {
+                    topGameBar(compact: compact)
 
                     boardSurface
-                        .frame(maxWidth: .infinity)
-                        .frame(maxHeight: size.height * boardHeightRatio)
-
-                    statusPanel
-                    controlStack(isLandscape: false)
-                    Spacer(minLength: 0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private var boardSurface: some View {
@@ -203,86 +201,111 @@ struct GameContainerView: View {
         )
     }
 
-    private func gameHeader(compact: Bool) -> some View {
-        VStack(alignment: .leading, spacing: compact ? 4 : 6) {
-            Text(difficulty.displayName)
-                .font(compact ? AppTypography.bodyStrong : AppTypography.sectionTitle)
-                .foregroundStyle(AppColors.textPrimary)
+    private func topGameBar(compact: Bool) -> some View {
+        let rowHeight: CGFloat = compact ? 62 : 68
 
-            Text("Focused board play with the HUD kept readable and tight.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.textSecondary)
-        }
-    }
-
-    private var hudGrid: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: AppSpacing.small),
-                GridItem(.flexible(), spacing: AppSpacing.small)
-            ],
-            spacing: AppSpacing.small
-        ) {
-            GameHUDTile(
-                title: "Score",
-                value: "\(viewModel.session.score)",
-                detail: "Goal \(viewModel.session.targetScore)"
+        return ZStack {
+            ArcadePanelSurface(
+                elevated: true,
+                cornerRadius: AppSpacing.cornerRadius
             )
 
-            GameHUDTile(
-                title: "Moves",
-                value: "\(viewModel.session.remainingMoves)"
-            )
+            VStack(spacing: compact ? 4 : 6) {
+                HStack(spacing: compact ? 6 : AppSpacing.xSmall) {
+                    CompactHUDPill(
+                        title: "Score",
+                        value: "\(viewModel.session.score)",
+                        detail: "Goal \(viewModel.session.targetScore)"
+                    )
+                    .frame(height: rowHeight)
 
-            GameHUDTile(
-                title: "Time",
-                value: timeText
-            )
+                    CompactHUDPill(
+                        title: "Moves",
+                        value: "\(viewModel.session.remainingMoves)"
+                    )
+                    .frame(height: rowHeight)
 
-            SecondaryButton(title: viewModel.session.isPaused ? "Paused" : "Pause") {
-                viewModel.pauseGame()
-            }
-            .disabled(viewModel.session.isPaused || viewModel.session.isGameOver || viewModel.isPreparingBoard)
-        }
-    }
+                    CompactHUDPill(
+                        title: "Time",
+                        value: timeText
+                    )
+                    .frame(height: rowHeight)
 
-    private var statusPanel: some View {
-        GlassPanel {
-            Text(viewModel.statusMessage)
-                .font(AppTypography.bodyStrong)
-                .foregroundStyle(AppColors.textPrimary)
-                .lineLimit(2)
-        }
-    }
-
-    private func controlStack(isLandscape: Bool) -> some View {
-        Group {
-            if isLandscape {
-                VStack(spacing: AppSpacing.medium) {
-                    SecondaryButton(title: "Restart") {
-                        restartRound()
-                    }
-                    .disabled(viewModel.isPreparingBoard)
-
-                    PrimaryButton(title: "Home") {
-                        leaveGame()
-                    }
+                    compactPauseButton()
+                        .frame(width: compact ? 46 : 52, height: rowHeight)
                 }
-            } else {
-                HStack(spacing: AppSpacing.medium) {
-                    SecondaryButton(title: "Restart") {
-                        restartRound()
-                    }
-                    .disabled(viewModel.isPreparingBoard)
-                    .frame(maxWidth: .infinity)
 
-                    PrimaryButton(title: "Home") {
-                        leaveGame()
-                    }
-                    .frame(maxWidth: .infinity)
+                if !compact {
+                    Text(viewModel.statusMessage)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .padding(.horizontal, compact ? 8 : AppSpacing.small)
+            .padding(.vertical, compact ? 7 : 9)
         }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func sideGameBar(compact: Bool) -> some View {
+        ZStack {
+            ArcadePanelSurface(
+                elevated: true,
+                cornerRadius: AppSpacing.cornerRadius
+            )
+
+            VStack(alignment: .leading, spacing: compact ? 8 : AppSpacing.small) {
+                Text(difficulty.displayName.uppercased())
+                    .font(AppTypography.hudLabel)
+                    .foregroundStyle(AppColors.textMuted)
+                    .lineLimit(1)
+
+                CompactHUDPill(
+                    title: "Score",
+                    value: "\(viewModel.session.score)",
+                    detail: "Goal \(viewModel.session.targetScore)"
+                )
+
+                CompactHUDPill(
+                    title: "Moves",
+                    value: "\(viewModel.session.remainingMoves)"
+                )
+
+                CompactHUDPill(
+                    title: "Time",
+                    value: timeText
+                )
+
+                Text(viewModel.statusMessage)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.textSecondary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer(minLength: 0)
+
+                compactPauseButton()
+                    .frame(height: compact ? 58 : 62)
+            }
+            .padding(compact ? 8 : AppSpacing.small)
+        }
+    }
+
+    private func compactPauseButton() -> some View {
+        Button {
+            viewModel.pauseGame()
+        } label: {
+            MenuGlyphIcon()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    ArcadeMiniButtonSurface()
+                }
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.session.isPaused || viewModel.session.isGameOver || viewModel.isPreparingBoard)
+        .accessibilityLabel("Open pause menu")
     }
 
     private func restartRound() {
@@ -301,34 +324,171 @@ struct GameContainerView: View {
     }
 }
 
-private struct GameHUDTile: View {
+private struct CompactHUDPill: View {
     let title: String
     let value: String
     var detail: String? = nil
 
     var body: some View {
         ZStack {
-            ArcadePanelSurface(cornerRadius: AppSpacing.cornerRadius)
+            ArcadeHUDPillSurface()
+
+            Rectangle()
+                .fill(AppColors.arcadeWarmEdge.opacity(0.84))
+                .frame(width: 3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 8)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title.uppercased())
                     .font(AppTypography.hudLabel)
-                    .foregroundStyle(AppColors.textMuted)
+                    .foregroundStyle(Color(red: 0.58, green: 0.96, blue: 1.0).opacity(0.76))
 
                 Text(value)
-                    .font(AppTypography.hudValue)
+                    .font(AppTypography.bodyStrong)
                     .foregroundStyle(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
 
                 if let detail {
                     Text(detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textSecondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.70)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
-            .padding(.horizontal, AppSpacing.medium)
-            .padding(.vertical, AppSpacing.small)
+            .frame(maxWidth: .infinity, minHeight: 48, maxHeight: .infinity, alignment: .leading)
+            .padding(.leading, 11)
+            .padding(.trailing, 9)
+            .padding(.vertical, 7)
+        }
+    }
+}
+
+private struct ArcadeHUDPillSurface: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(AppColors.arcadeInk.opacity(0.92))
+                .offset(y: 3)
+
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.20, green: 0.27, blue: 0.62).opacity(0.96),
+                            Color(red: 0.08, green: 0.17, blue: 0.44).opacity(0.98),
+                            Color(red: 0.04, green: 0.06, blue: 0.20).opacity(0.98)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.18),
+                            Color.clear,
+                            AppColors.arcadeWarmEdge.opacity(0.08)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .padding(1)
+
+            VStack(spacing: 5) {
+                Color.white.opacity(0.12)
+                    .frame(height: 1)
+
+                Color.black.opacity(0.18)
+                    .frame(height: 1)
+            }
+            .padding(.horizontal, 10)
+            .allowsHitTesting(false)
+
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(AppColors.arcadeInk.opacity(0.95), lineWidth: 2)
+
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .stroke(AppColors.arcadePanelGlow.opacity(0.34), lineWidth: 1)
+                .padding(2)
+        }
+    }
+}
+
+private struct MenuGlyphIcon: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.arcadeInk.opacity(0.76),
+                            Color(red: 0.03, green: 0.05, blue: 0.16).opacity(0.88)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .aspectRatio(1, contentMode: .fit)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+
+            VStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule(style: .continuous)
+                        .fill(index == 1 ? AppColors.arcadeWarmEdge : AppColors.arcadePanelGlow)
+                        .frame(width: 18, height: 3)
+                        .shadow(color: AppColors.arcadePanelGlow.opacity(0.36), radius: 3)
+                }
+            }
+        }
+    }
+}
+
+private struct ArcadeMiniButtonSurface: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(AppColors.arcadeInk.opacity(0.86))
+                .offset(y: 4)
+
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            AppColors.arcadePrimaryTop,
+                            AppColors.arcadePrimaryMid,
+                            AppColors.arcadePrimaryBottom
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            VStack(spacing: 6) {
+                Color.white.opacity(0.14)
+                    .frame(height: 1)
+
+                AppColors.arcadeWarmEdge.opacity(0.18)
+                    .frame(height: 1)
+
+                Color.black.opacity(0.20)
+                    .frame(height: 1)
+            }
+            .padding(.horizontal, 8)
+            .allowsHitTesting(false)
+
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .stroke(AppColors.arcadeInk.opacity(0.90), lineWidth: 2)
+
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(AppColors.arcadeBevelHighlight.opacity(0.56), lineWidth: 1)
+                .padding(2)
         }
     }
 }

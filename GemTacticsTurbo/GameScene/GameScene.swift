@@ -10,12 +10,13 @@ import UIKit
 
 final class GameScene: SKScene {
     private enum Layout {
-        static let boardPadding: CGFloat = 28
-        static let tileSpacingRatio: CGFloat = 0.08
-        static let minimumTileSpacing: CGFloat = 4
-        static let maximumTileSpacing: CGFloat = 8
-        static let gemInset: CGFloat = 16
-        static let boardCornerRadius: CGFloat = 28
+        static let boardPadding: CGFloat = 5
+        static let boardBackgroundOutset: CGFloat = 6
+        static let tileSpacingRatio: CGFloat = 0.045
+        static let minimumTileSpacing: CGFloat = 2
+        static let maximumTileSpacing: CGFloat = 5
+        static let gemInset: CGFloat = 6
+        static let boardCornerRadius: CGFloat = 18
         static let selectedStrokeWidth: CGFloat = 3
         static let swapDuration: TimeInterval = 0.14
         static let swapBackDuration: TimeInterval = 0.12
@@ -54,6 +55,14 @@ final class GameScene: SKScene {
         let position: BoardPosition
         let gem: GemType
         let startRow: CGFloat
+    }
+
+    private enum GemSilhouette {
+        case rubyOctagon
+        case sapphireRound
+        case emeraldCut
+        case topazTrillion
+        case amethystShard
     }
 
     private let boardNode = SKNode()
@@ -230,14 +239,31 @@ final class GameScene: SKScene {
         updateBoardMetrics(rows: rows, columns: columns)
 
         let boardBackground = SKShapeNode(
-            rectOf: CGSize(width: boardWidth + 18, height: boardHeight + 18),
+            rectOf: CGSize(
+                width: boardWidth + Layout.boardBackgroundOutset,
+                height: boardHeight + Layout.boardBackgroundOutset
+            ),
             cornerRadius: Layout.boardCornerRadius
         )
-        boardBackground.fillColor = UIColor(red: 0.08, green: 0.07, blue: 0.16, alpha: 0.94)
-        boardBackground.strokeColor = UIColor(red: 0.50, green: 0.90, blue: 0.98, alpha: 0.30)
+        boardBackground.fillColor = UIColor(red: 0.04, green: 0.05, blue: 0.15, alpha: 0.96)
+        boardBackground.strokeColor = UIColor(red: 0.52, green: 0.96, blue: 1.00, alpha: 0.42)
         boardBackground.lineWidth = 2
-        boardBackground.glowWidth = 1.5
+        boardBackground.glowWidth = 2.2
         boardBackground.zPosition = -1
+
+        let boardInnerGlow = SKShapeNode(
+            rectOf: CGSize(
+                width: max(boardWidth - tileSpacing, 1),
+                height: max(boardHeight - tileSpacing, 1)
+            ),
+            cornerRadius: max(Layout.boardCornerRadius - 4, 1)
+        )
+        boardInnerGlow.fillColor = .clear
+        boardInnerGlow.strokeColor = UIColor(red: 1.00, green: 0.62, blue: 0.16, alpha: 0.12)
+        boardInnerGlow.lineWidth = 2
+        boardInnerGlow.zPosition = 1
+        boardBackground.addChild(boardInnerGlow)
+
         boardBackgroundNode = boardBackground
         boardNode.addChild(boardBackground)
 
@@ -346,45 +372,117 @@ final class GameScene: SKScene {
     }
 
     private func makeTileNode() -> SKShapeNode {
+        let cornerRadius = max(tileSize * 0.14, 6)
         let tileNode = SKShapeNode(
             rectOf: CGSize(width: tileSize, height: tileSize),
-            cornerRadius: max(tileSize * 0.18, 8)
+            cornerRadius: cornerRadius
         )
-        tileNode.fillColor = UIColor(red: 0.12, green: 0.10, blue: 0.24, alpha: 0.92)
-        tileNode.strokeColor = UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 0.10)
-        tileNode.lineWidth = 1
+        tileNode.fillColor = UIColor(red: 0.05, green: 0.09, blue: 0.25, alpha: 0.96)
+        tileNode.strokeColor = UIColor(red: 0.38, green: 0.92, blue: 1.00, alpha: 0.20)
+        tileNode.lineWidth = 1.2
+
+        let inset = max(tileSize * 0.10, 4)
+        let innerRim = SKShapeNode(
+            rectOf: CGSize(
+                width: max(tileSize - inset, 1),
+                height: max(tileSize - inset, 1)
+            ),
+            cornerRadius: max(cornerRadius - 3, 1)
+        )
+        innerRim.fillColor = .clear
+        innerRim.strokeColor = UIColor(red: 0.46, green: 1.00, blue: 0.96, alpha: 0.13)
+        innerRim.lineWidth = 1
+        innerRim.zPosition = 1
+        tileNode.addChild(innerRim)
+
+        let topHighlight = SKShapeNode(
+            rectOf: CGSize(
+                width: max(tileSize * 0.62, 1),
+                height: max(tileSize * 0.045, 2)
+            ),
+            cornerRadius: 1
+        )
+        topHighlight.fillColor = UIColor.white.withAlphaComponent(0.15)
+        topHighlight.strokeColor = .clear
+        topHighlight.position = CGPoint(x: 0, y: tileSize * 0.32)
+        topHighlight.zPosition = 2
+        tileNode.addChild(topHighlight)
+
+        let lowerShade = SKShapeNode(
+            rectOf: CGSize(
+                width: max(tileSize * 0.70, 1),
+                height: max(tileSize * 0.10, 3)
+            ),
+            cornerRadius: 2
+        )
+        lowerShade.fillColor = UIColor.black.withAlphaComponent(0.20)
+        lowerShade.strokeColor = .clear
+        lowerShade.position = CGPoint(x: 0, y: -tileSize * 0.31)
+        lowerShade.zPosition = 2
+        tileNode.addChild(lowerShade)
+
         return tileNode
     }
 
     private func makeGemNode(for gem: GemType) -> GemSpriteNode {
         let gemNode = GemSpriteNode(gemType: gem)
         let gemSideLength = max(tileSize - Layout.gemInset, 10)
+        let silhouette = gemSilhouette(for: gem)
+        let gemPath = gemPath(for: silhouette, sideLength: gemSideLength)
 
-        let gemShape = SKShapeNode(
-            path: diamondPath(sideLength: gemSideLength)
+        let dropShadow = SKShapeNode(path: gemPath)
+        dropShadow.fillColor = shadowColor(for: gem).withAlphaComponent(0.92)
+        dropShadow.strokeColor = UIColor.black.withAlphaComponent(0.55)
+        dropShadow.lineWidth = max(gemSideLength * 0.05, 2)
+        dropShadow.position = CGPoint(
+            x: max(gemSideLength * 0.055, 2),
+            y: -max(gemSideLength * 0.065, 2)
         )
+        dropShadow.zPosition = -2
+        gemNode.addChild(dropShadow)
+
+        let darkRim = SKShapeNode(path: gemPath)
+        darkRim.fillColor = shadowColor(for: gem)
+        darkRim.strokeColor = UIColor.black.withAlphaComponent(0.72)
+        darkRim.lineWidth = max(gemSideLength * 0.08, 2.5)
+        darkRim.zPosition = -1
+        gemNode.addChild(darkRim)
+
+        let gemShape = SKShapeNode(path: gemPath)
         gemShape.fillColor = color(for: gem)
-        gemShape.strokeColor = UIColor.white.withAlphaComponent(0.35)
-        gemShape.lineWidth = 1.5
-        gemShape.glowWidth = 1
+        gemShape.strokeColor = UIColor.white.withAlphaComponent(0.38)
+        gemShape.lineWidth = max(gemSideLength * 0.025, 1.25)
+        gemShape.glowWidth = max(gemSideLength * 0.02, 0.8)
+        gemShape.zPosition = 0
         gemNode.addChild(gemShape)
 
-        let shineShape = SKShapeNode(circleOfRadius: max(gemSideLength * 0.12, 3))
-        shineShape.fillColor = UIColor.white.withAlphaComponent(0.30)
-        shineShape.strokeColor = .clear
-        shineShape.position = CGPoint(
-            x: max(gemSideLength * -0.16, -8),
-            y: max(gemSideLength * 0.18, 8)
+        let lowerShade = SKShapeNode(
+            path: shadePath(for: silhouette, sideLength: gemSideLength)
         )
-        gemNode.addChild(shineShape)
+        lowerShade.fillColor = shadowColor(for: gem).withAlphaComponent(0.34)
+        lowerShade.strokeColor = .clear
+        lowerShade.zPosition = 1
+        gemNode.addChild(lowerShade)
 
-        let labelNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        labelNode.text = String(gem.displayName.prefix(1))
-        labelNode.fontSize = max(tileSize * 0.22, 10)
-        labelNode.verticalAlignmentMode = .center
-        labelNode.fontColor = UIColor.white.withAlphaComponent(0.92)
-        labelNode.position = CGPoint(x: 0, y: -labelNode.fontSize * 0.08)
-        gemNode.addChild(labelNode)
+        let facets = SKShapeNode(
+            path: facetPath(for: silhouette, sideLength: gemSideLength)
+        )
+        facets.fillColor = .clear
+        facets.strokeColor = UIColor.white.withAlphaComponent(0.30)
+        facets.lineWidth = max(gemSideLength * 0.022, 1)
+        facets.zPosition = 2
+        gemNode.addChild(facets)
+
+        let highlight = SKShapeNode(
+            path: highlightPath(sideLength: gemSideLength)
+        )
+        highlight.fillColor = UIColor.white.withAlphaComponent(0.34)
+        highlight.strokeColor = UIColor.white.withAlphaComponent(0.20)
+        highlight.lineWidth = 1
+        highlight.zPosition = 3
+        gemNode.addChild(highlight)
+
+        addPixelSparkle(to: gemNode, sideLength: gemSideLength)
 
         return gemNode
     }
@@ -449,12 +547,12 @@ final class GameScene: SKScene {
         for (position, tileNode) in tileNodes {
             let isSelected = position == selectedPosition
             tileNode.strokeColor = isSelected
-                ? UIColor(red: 0.32, green: 0.88, blue: 0.96, alpha: 0.95)
-                : UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 0.10)
-            tileNode.lineWidth = isSelected ? Layout.selectedStrokeWidth : 1
+                ? UIColor(red: 1.00, green: 0.74, blue: 0.20, alpha: 0.96)
+                : UIColor(red: 0.38, green: 0.92, blue: 1.00, alpha: 0.20)
+            tileNode.lineWidth = isSelected ? Layout.selectedStrokeWidth : 1.2
             tileNode.fillColor = isSelected
-                ? UIColor(red: 0.18, green: 0.16, blue: 0.34, alpha: 0.96)
-                : UIColor(red: 0.12, green: 0.10, blue: 0.24, alpha: 0.92)
+                ? UIColor(red: 0.16, green: 0.12, blue: 0.30, alpha: 0.98)
+                : UIColor(red: 0.05, green: 0.09, blue: 0.25, alpha: 0.96)
 
             if let gemNode = gemNode(at: position) {
                 gemNode.removeAction(forKey: "selectionScale")
@@ -899,29 +997,322 @@ final class GameScene: SKScene {
         return action
     }
 
-    private func diamondPath(sideLength: CGFloat) -> CGPath {
+    private func gemSilhouette(for gem: GemType) -> GemSilhouette {
+        switch gem {
+        case .ruby:
+            return .rubyOctagon
+        case .sapphire:
+            return .sapphireRound
+        case .emerald:
+            return .emeraldCut
+        case .topaz:
+            return .topazTrillion
+        case .amethyst:
+            return .amethystShard
+        }
+    }
+
+    private func gemPath(
+        for silhouette: GemSilhouette,
+        sideLength: CGFloat
+    ) -> CGPath {
+        switch silhouette {
+        case .rubyOctagon:
+            return octagonPath(sideLength: sideLength)
+        case .sapphireRound:
+            return polygonPath(sides: 10, radius: sideLength / 2)
+        case .emeraldCut:
+            return emeraldCutPath(sideLength: sideLength)
+        case .topazTrillion:
+            return trillionPath(sideLength: sideLength)
+        case .amethystShard:
+            return shardPath(sideLength: sideLength)
+        }
+    }
+
+    private func octagonPath(sideLength: CGFloat) -> CGPath {
         let half = sideLength / 2
+        let cut = sideLength * 0.17
+
+        return path(from: [
+            CGPoint(x: -half + cut, y: half),
+            CGPoint(x: half - cut, y: half),
+            CGPoint(x: half, y: half - cut),
+            CGPoint(x: half, y: -half + cut),
+            CGPoint(x: half - cut, y: -half),
+            CGPoint(x: -half + cut, y: -half),
+            CGPoint(x: -half, y: -half + cut),
+            CGPoint(x: -half, y: half - cut)
+        ])
+    }
+
+    private func emeraldCutPath(sideLength: CGFloat) -> CGPath {
+        let halfWidth = sideLength * 0.42
+        let halfHeight = sideLength / 2
+        let cutX = sideLength * 0.13
+        let cutY = sideLength * 0.10
+
+        return path(from: [
+            CGPoint(x: -halfWidth + cutX, y: halfHeight),
+            CGPoint(x: halfWidth - cutX, y: halfHeight),
+            CGPoint(x: halfWidth, y: halfHeight - cutY),
+            CGPoint(x: halfWidth, y: -halfHeight + cutY),
+            CGPoint(x: halfWidth - cutX, y: -halfHeight),
+            CGPoint(x: -halfWidth + cutX, y: -halfHeight),
+            CGPoint(x: -halfWidth, y: -halfHeight + cutY),
+            CGPoint(x: -halfWidth, y: halfHeight - cutY)
+        ])
+    }
+
+    private func trillionPath(sideLength: CGFloat) -> CGPath {
+        let half = sideLength / 2
+
+        return path(from: [
+            CGPoint(x: 0, y: half),
+            CGPoint(x: half, y: -half * 0.24),
+            CGPoint(x: half * 0.22, y: -half),
+            CGPoint(x: -half * 0.22, y: -half),
+            CGPoint(x: -half, y: -half * 0.24)
+        ])
+    }
+
+    private func shardPath(sideLength: CGFloat) -> CGPath {
+        let half = sideLength / 2
+
+        return path(from: [
+            CGPoint(x: 0, y: half),
+            CGPoint(x: half * 0.48, y: half * 0.14),
+            CGPoint(x: half * 0.34, y: -half * 0.72),
+            CGPoint(x: 0, y: -half),
+            CGPoint(x: -half * 0.38, y: -half * 0.62),
+            CGPoint(x: -half * 0.50, y: half * 0.08)
+        ])
+    }
+
+    private func polygonPath(
+        sides: Int,
+        radius: CGFloat,
+        yScale: CGFloat = 1,
+        rotation: CGFloat = -CGFloat.pi / 2
+    ) -> CGPath {
+        let angleStep = (CGFloat.pi * 2) / CGFloat(max(sides, 3))
+        let points = (0..<max(sides, 3)).map { index -> CGPoint in
+            let angle = rotation + (CGFloat(index) * angleStep)
+
+            return CGPoint(
+                x: CGFloat(cos(Double(angle))) * radius,
+                y: CGFloat(sin(Double(angle))) * radius * yScale
+            )
+        }
+
+        return path(from: points)
+    }
+
+    private func path(from points: [CGPoint]) -> CGPath {
         let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: half))
-        path.addLine(to: CGPoint(x: half, y: 0))
-        path.addLine(to: CGPoint(x: 0, y: -half))
-        path.addLine(to: CGPoint(x: -half, y: 0))
+
+        guard let firstPoint = points.first else {
+            return path.cgPath
+        }
+
+        path.move(to: firstPoint)
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+
         path.close()
         return path.cgPath
+    }
+
+    private func facetPath(
+        for silhouette: GemSilhouette,
+        sideLength: CGFloat
+    ) -> CGPath {
+        let half = sideLength / 2
+        let path = UIBezierPath()
+
+        switch silhouette {
+        case .rubyOctagon:
+            addLine(to: path, from: .zero, to: CGPoint(x: 0, y: half * 0.82))
+            addLine(to: path, from: .zero, to: CGPoint(x: half * 0.82, y: 0))
+            addLine(to: path, from: .zero, to: CGPoint(x: 0, y: -half * 0.82))
+            addLine(to: path, from: .zero, to: CGPoint(x: -half * 0.82, y: 0))
+            addLine(
+                to: path,
+                from: CGPoint(x: -half * 0.42, y: half * 0.42),
+                to: CGPoint(x: half * 0.42, y: -half * 0.42)
+            )
+
+        case .sapphireRound:
+            for index in 0..<8 {
+                let angle = (-CGFloat.pi / 2) + (CGFloat(index) * CGFloat.pi / 4)
+                addLine(
+                    to: path,
+                    from: .zero,
+                    to: CGPoint(
+                        x: CGFloat(cos(Double(angle))) * half * 0.80,
+                        y: CGFloat(sin(Double(angle))) * half * 0.80
+                    )
+                )
+            }
+
+        case .emeraldCut:
+            let width = sideLength * 0.34
+            let height = sideLength * 0.38
+            path.append(
+                UIBezierPath(
+                    rect: CGRect(
+                        x: -width,
+                        y: -height,
+                        width: width * 2,
+                        height: height * 2
+                    )
+                )
+            )
+            addLine(to: path, from: CGPoint(x: -half * 0.42, y: 0), to: CGPoint(x: half * 0.42, y: 0))
+            addLine(to: path, from: CGPoint(x: 0, y: -half * 0.46), to: CGPoint(x: 0, y: half * 0.46))
+
+        case .topazTrillion:
+            addLine(to: path, from: CGPoint(x: 0, y: half * 0.82), to: CGPoint(x: 0, y: -half * 0.70))
+            addLine(to: path, from: CGPoint(x: 0, y: half * 0.82), to: CGPoint(x: half * 0.42, y: -half * 0.22))
+            addLine(to: path, from: CGPoint(x: 0, y: half * 0.82), to: CGPoint(x: -half * 0.42, y: -half * 0.22))
+            addLine(to: path, from: CGPoint(x: -half * 0.62, y: -half * 0.18), to: CGPoint(x: half * 0.62, y: -half * 0.18))
+
+        case .amethystShard:
+            addLine(to: path, from: CGPoint(x: 0, y: half * 0.82), to: CGPoint(x: 0, y: -half * 0.82))
+            addLine(to: path, from: CGPoint(x: -half * 0.42, y: half * 0.08), to: CGPoint(x: 0, y: half * 0.82))
+            addLine(to: path, from: CGPoint(x: half * 0.38, y: half * 0.10), to: CGPoint(x: 0, y: -half * 0.82))
+            addLine(to: path, from: CGPoint(x: -half * 0.30, y: -half * 0.58), to: CGPoint(x: half * 0.30, y: -half * 0.54))
+        }
+
+        return path.cgPath
+    }
+
+    private func shadePath(
+        for silhouette: GemSilhouette,
+        sideLength: CGFloat
+    ) -> CGPath {
+        let half = sideLength / 2
+
+        switch silhouette {
+        case .rubyOctagon:
+            return path(from: [
+                CGPoint(x: -half * 0.70, y: -half * 0.10),
+                CGPoint(x: half * 0.70, y: -half * 0.10),
+                CGPoint(x: half * 0.48, y: -half * 0.78),
+                CGPoint(x: -half * 0.48, y: -half * 0.78)
+            ])
+
+        case .sapphireRound:
+            return path(from: [
+                CGPoint(x: -half * 0.64, y: -half * 0.08),
+                CGPoint(x: half * 0.64, y: -half * 0.08),
+                CGPoint(x: half * 0.36, y: -half * 0.70),
+                CGPoint(x: 0, y: -half * 0.82),
+                CGPoint(x: -half * 0.36, y: -half * 0.70)
+            ])
+
+        case .emeraldCut:
+            return path(from: [
+                CGPoint(x: -half * 0.34, y: -half * 0.08),
+                CGPoint(x: half * 0.34, y: -half * 0.08),
+                CGPoint(x: half * 0.32, y: -half * 0.74),
+                CGPoint(x: -half * 0.32, y: -half * 0.74)
+            ])
+
+        case .topazTrillion:
+            return path(from: [
+                CGPoint(x: -half * 0.62, y: -half * 0.18),
+                CGPoint(x: half * 0.62, y: -half * 0.18),
+                CGPoint(x: half * 0.20, y: -half * 0.82),
+                CGPoint(x: -half * 0.20, y: -half * 0.82)
+            ])
+
+        case .amethystShard:
+            return path(from: [
+                CGPoint(x: -half * 0.34, y: -half * 0.22),
+                CGPoint(x: half * 0.28, y: -half * 0.18),
+                CGPoint(x: half * 0.18, y: -half * 0.70),
+                CGPoint(x: 0, y: -half * 0.86),
+                CGPoint(x: -half * 0.28, y: -half * 0.56)
+            ])
+        }
+    }
+
+    private func highlightPath(sideLength: CGFloat) -> CGPath {
+        let half = sideLength / 2
+        let size = max(sideLength * 0.11, 3)
+        let origin = CGPoint(x: -half * 0.32, y: half * 0.26)
+
+        return path(from: [
+            CGPoint(x: origin.x, y: origin.y + size),
+            CGPoint(x: origin.x + size * 0.70, y: origin.y + size * 0.42),
+            CGPoint(x: origin.x + size * 0.36, y: origin.y - size * 0.45),
+            CGPoint(x: origin.x - size * 0.48, y: origin.y - size * 0.16)
+        ])
+    }
+
+    private func addPixelSparkle(
+        to gemNode: GemSpriteNode,
+        sideLength: CGFloat
+    ) {
+        let arm = max(sideLength * 0.045, 2)
+        let sparklePath = UIBezierPath()
+        addLine(
+            to: sparklePath,
+            from: CGPoint(x: 0, y: -arm),
+            to: CGPoint(x: 0, y: arm)
+        )
+        addLine(
+            to: sparklePath,
+            from: CGPoint(x: -arm, y: 0),
+            to: CGPoint(x: arm, y: 0)
+        )
+
+        let sparkle = SKShapeNode(path: sparklePath.cgPath)
+        sparkle.strokeColor = UIColor.white.withAlphaComponent(0.58)
+        sparkle.lineWidth = max(sideLength * 0.018, 1)
+        sparkle.position = CGPoint(x: sideLength * 0.24, y: sideLength * 0.25)
+        sparkle.zPosition = 4
+        gemNode.addChild(sparkle)
+    }
+
+    private func addLine(
+        to path: UIBezierPath,
+        from startPoint: CGPoint,
+        to endPoint: CGPoint
+    ) {
+        path.move(to: startPoint)
+        path.addLine(to: endPoint)
     }
 
     private func color(for gem: GemType) -> UIColor {
         switch gem {
         case .ruby:
-            return UIColor(red: 1.00, green: 0.34, blue: 0.40, alpha: 1)
+            return UIColor(red: 1.00, green: 0.16, blue: 0.27, alpha: 1)
         case .sapphire:
-            return UIColor(red: 0.28, green: 0.58, blue: 1.00, alpha: 1)
+            return UIColor(red: 0.20, green: 0.52, blue: 1.00, alpha: 1)
         case .emerald:
-            return UIColor(red: 0.22, green: 0.86, blue: 0.55, alpha: 1)
+            return UIColor(red: 0.08, green: 0.88, blue: 0.48, alpha: 1)
         case .topaz:
-            return UIColor(red: 1.00, green: 0.76, blue: 0.28, alpha: 1)
+            return UIColor(red: 1.00, green: 0.72, blue: 0.10, alpha: 1)
         case .amethyst:
-            return UIColor(red: 0.72, green: 0.42, blue: 1.00, alpha: 1)
+            return UIColor(red: 0.70, green: 0.28, blue: 1.00, alpha: 1)
+        }
+    }
+
+    private func shadowColor(for gem: GemType) -> UIColor {
+        switch gem {
+        case .ruby:
+            return UIColor(red: 0.45, green: 0.02, blue: 0.12, alpha: 1)
+        case .sapphire:
+            return UIColor(red: 0.04, green: 0.14, blue: 0.55, alpha: 1)
+        case .emerald:
+            return UIColor(red: 0.02, green: 0.34, blue: 0.20, alpha: 1)
+        case .topaz:
+            return UIColor(red: 0.58, green: 0.30, blue: 0.02, alpha: 1)
+        case .amethyst:
+            return UIColor(red: 0.32, green: 0.05, blue: 0.56, alpha: 1)
         }
     }
 }
