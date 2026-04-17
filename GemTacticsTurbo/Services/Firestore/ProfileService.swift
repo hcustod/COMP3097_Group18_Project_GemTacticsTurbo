@@ -62,6 +62,8 @@ final class ProfileService {
                 }
 
                 let profile = UserProfile(
+                    winsOnEasy: data["winsOnEasy"] as? Int ?? 0,
+                    winsOnMedium: data["winsOnMedium"] as? Int ?? 0,
                     uid: data["uid"] as? String ?? uid,
                     displayName: data["displayName"] as? String ?? "Player",
                     email: data["email"] as? String,
@@ -124,6 +126,8 @@ final class ProfileService {
             "highestScore": profile.highestScore,
             "totalScore": profile.totalScore,
             "totalMatches": profile.totalMatches,
+            "winsOnEasy": profile.winsOnEasy,
+            "winsOnMedium": profile.winsOnMedium,
             "unlockedDifficulty": profile.unlockedDifficulty,
             "isGuest": profile.isGuest,
             "createdAt": Timestamp(date: profile.createdAt),
