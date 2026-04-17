@@ -46,11 +46,11 @@ enum Difficulty: String, CaseIterable, Hashable, Sendable, Codable {
     var targetScore: Int {
         switch self {
         case .easy:
-            return 1_000
+            return 4_000
         case .medium:
-            return 2_000
+            return 8_000
         case .hard:
-            return 3_500
+            return 12_000
         }
     }
 

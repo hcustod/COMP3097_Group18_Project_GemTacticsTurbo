@@ -31,12 +31,8 @@ final class LoginViewModel: ObservableObject {
         self.init(authService: .shared)
     }
 
-    var isLocalOnlyMode: Bool {
-        !authService.isRemoteAuthAvailable
-    }
-
     var canSubmitLogin: Bool {
-        !isSubmitting && !isLocalOnlyMode
+        !isSubmitting
     }
 
     var canSubmitGuest: Bool {

@@ -6,8 +6,8 @@
 //
 
 enum ScoreCalculator {
-    static let basePointsPerGem = 100
-    static let extraMatchBonusPerGem = 50
+    static let basePointsPerGem = 75
+    static let extraMatchBonusPerGem = 35
     static let comboStepMultiplier = 0.25
 
     static func score(

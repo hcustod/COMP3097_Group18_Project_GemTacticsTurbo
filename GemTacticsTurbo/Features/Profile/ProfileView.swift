@@ -7,6 +7,31 @@ struct ProfileView: View {
     var body: some View {
         ScreenContainer(title: "Profile") {
             VStack(alignment: .leading, spacing: AppSpacing.sectionSpacing) {
+                if router.isGuest {
+                    GlassPanel {
+                        VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
+                            Text("Guest Profile")
+                                .font(AppTypography.sectionTitle)
+                                .foregroundStyle(AppColors.brandGradientText)
+
+                            Text("You can keep playing as a guest, or switch to a full account to sign in with email and keep a named player identity.")
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            VStack(spacing: AppSpacing.stackTight) {
+                                PrimaryButton(title: "Create Account") {
+                                    router.showRegister()
+                                }
+
+                                SecondaryButton(title: "Sign In") {
+                                    router.showLogin()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 GlassPanel(elevated: true) {
                     VStack(alignment: .leading, spacing: AppSpacing.stackStandard) {
                         Text("Stats")

@@ -14,7 +14,7 @@ final class ProfileService {
     private let database: Firestore?
     private let defaults: UserDefaults
     private let collectionName = "users"
-    private let guestProfileKeyPrefix = "profile.guest"
+    private let localProfileKeyPrefix = "profile.local"
 
     init(
         database: Firestore? = nil,
@@ -30,8 +30,8 @@ final class ProfileService {
     }
 
     func fetchProfile(for user: AuthUser) async throws -> UserProfile? {
-        if user.isGuest {
-            return loadGuestProfile(uid: user.uid) ?? UserProfile.guestFallback(for: user)
+        if database == nil {
+            return loadLocalProfile(uid: user.uid) ?? fallbackProfile(for: user)
         }
 
         return try await fetchProfile(uid: user.uid)
@@ -83,8 +83,8 @@ final class ProfileService {
     }
 
     func updateProfile(_ profile: UserProfile) async throws {
-        if profile.isGuest {
-            saveGuestProfile(profile)
+        if database == nil {
+            saveLocalProfile(profile)
             notifyProfileDidUpdate(uid: profile.uid)
             return
         }
@@ -146,24 +146,32 @@ final class ProfileService {
         }
     }
 
-    private func loadGuestProfile(uid: String) -> UserProfile? {
-        guard let data = defaults.data(forKey: guestProfileKey(for: uid)) else {
+    func deleteProfile(uid: String) {
+        defaults.removeObject(forKey: localProfileKey(for: uid))
+    }
+
+    private func loadLocalProfile(uid: String) -> UserProfile? {
+        guard let data = defaults.data(forKey: localProfileKey(for: uid)) else {
             return nil
         }
 
         return try? JSONDecoder().decode(UserProfile.self, from: data)
     }
 
-    private func saveGuestProfile(_ profile: UserProfile) {
+    private func saveLocalProfile(_ profile: UserProfile) {
         guard let data = try? JSONEncoder().encode(profile) else {
             return
         }
 
-        defaults.set(data, forKey: guestProfileKey(for: profile.uid))
+        defaults.set(data, forKey: localProfileKey(for: profile.uid))
     }
 
-    private func guestProfileKey(for uid: String) -> String {
-        "\(guestProfileKeyPrefix).\(uid)"
+    private func localProfileKey(for uid: String) -> String {
+        "\(localProfileKeyPrefix).\(uid)"
+    }
+
+    private func fallbackProfile(for user: AuthUser) -> UserProfile {
+        user.isGuest ? UserProfile.guestFallback(for: user) : UserProfile.initial(for: user)
     }
 
     private func notifyProfileDidUpdate(uid: String) {

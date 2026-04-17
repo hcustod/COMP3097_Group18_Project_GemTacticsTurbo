@@ -64,7 +64,7 @@ struct DeleteAccountView: View {
                                 }
                             }
                         }
-                        .disabled(!viewModel.canDelete)
+                        .disabled(viewModel.isDeleting)
                     }
 
                     SecondaryButton(title: "Settings") {

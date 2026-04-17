@@ -8,6 +8,7 @@
 import Combine
 import CoreGraphics
 import Foundation
+import UIKit
 
 @MainActor
 final class GameSceneCoordinator: ObservableObject {

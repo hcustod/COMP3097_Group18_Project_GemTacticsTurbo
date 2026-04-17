@@ -49,13 +49,13 @@ struct RootView: View {
 
     private func bootstrapSession() async {
         if let currentUser = authService.getCurrentUser() {
-            router.applyAuthState(currentUser)
-            return
-        }
+            if currentUser.isGuest {
+                try? authService.signOut()
+                router.applyAuthState(nil)
+                return
+            }
 
-        if !authService.isRemoteAuthAvailable {
-            let guestUser = try? await authService.signInAnonymously()
-            router.applyAuthState(guestUser)
+            router.applyAuthState(currentUser)
             return
         }
 
@@ -94,7 +94,7 @@ private struct UnauthenticatedFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.authPath) {
-            LoginView(router: router)
+            RegisterView(router: router)
                 .navigationDestination(for: AppRouter.AuthScreen.self) { screen in
                     switch screen {
                     case .login:
@@ -117,6 +117,10 @@ private struct MainFlowView: View {
                     switch screen {
                     case .home:
                         HomeView(router: router)
+                    case .login:
+                        LoginView(router: router)
+                    case .register:
+                        RegisterView(router: router)
                     case .howToPlay:
                         HowToPlayView(router: router)
                     case .gameMode:

@@ -52,6 +52,10 @@ final class RegisterViewModel: ObservableObject {
         !isSubmitting
     }
 
+    var canSubmitGuest: Bool {
+        !isSubmitting
+    }
+
     func register() async -> Bool {
         guard !isSubmitting else {
             return false
@@ -75,6 +79,7 @@ final class RegisterViewModel: ObservableObject {
                     return false
                 }
 
+                try? authService.signOut()
                 errorMessage = nil
                 return true
             } catch {
@@ -85,6 +90,24 @@ final class RegisterViewModel: ObservableObject {
 
         errorMessage = validationError
         return false
+    }
+
+    func signInAsGuest() async -> Bool {
+        guard !isSubmitting else {
+            return false
+        }
+
+        isSubmitting = true
+        defer { isSubmitting = false }
+
+        do {
+            _ = try await authService.signInAnonymously()
+            errorMessage = nil
+            return true
+        } catch {
+            errorMessage = authService.errorMessage(for: error)
+            return false
+        }
     }
 
     private func validateRegistration() -> String? {
