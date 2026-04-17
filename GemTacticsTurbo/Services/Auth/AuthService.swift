@@ -406,7 +406,6 @@ final class AuthService {
 private enum AuthServiceError: LocalizedError {
     case missingUser
     case noCurrentUser
-    case firebaseUnavailable
     case invalidLocalCredentials
     case emailAlreadyInUseLocal
     case guestAccountDeletionUnavailable
@@ -417,8 +416,6 @@ private enum AuthServiceError: LocalizedError {
             return "Firebase returned no user for the completed authentication request."
         case .noCurrentUser:
             return "There is no currently signed-in user."
-        case .firebaseUnavailable:
-            return "Firebase is not configured for this build. Use guest mode to keep testing the app locally."
         case .invalidLocalCredentials:
             return "Invalid email or password."
         case .emailAlreadyInUseLocal:

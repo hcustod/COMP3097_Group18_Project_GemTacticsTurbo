@@ -43,12 +43,6 @@ final class AppRouter: ObservableObject {
         rootState == .guest
     }
 
-    func showLaunching() {
-        authPath.removeAll()
-        mainPath.removeAll()
-        rootState = .launching
-    }
-
     func showLogin() {
         switch rootState {
         case .launching:
@@ -75,18 +69,6 @@ final class AppRouter: ObservableObject {
         case .guest:
             showGuestAccountScreen(.register)
         }
-    }
-
-    func enterAuthenticatedHome() {
-        authPath.removeAll()
-        mainPath.removeAll()
-        rootState = .authenticated
-    }
-
-    func enterGuestHome() {
-        authPath.removeAll()
-        mainPath.removeAll()
-        rootState = .guest
     }
 
     func show(_ screen: MainScreen) {

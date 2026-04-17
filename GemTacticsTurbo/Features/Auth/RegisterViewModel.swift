@@ -56,10 +56,6 @@ final class RegisterViewModel: ObservableObject {
         !isSubmitting
     }
 
-    var isLocalOnlyMode: Bool {
-        !authService.isRemoteAuthAvailable
-    }
-
     func register() async -> Bool {
         guard !isSubmitting else {
             return false
@@ -69,11 +65,11 @@ final class RegisterViewModel: ObservableObject {
             isSubmitting = true
             defer { isSubmitting = false }
 
-                do {
-                    let user = try await authService.register(
-                        email: email,
-                        password: password,
-                        displayName: displayName
+            do {
+                let user = try await authService.register(
+                    email: email,
+                    password: password,
+                    displayName: displayName
                 )
                 do {
                     try await profileService.createInitialProfile(for: user)

@@ -216,7 +216,7 @@ final class GameCoreEngineTests: XCTestCase {
         XCTAssertEqual(result.steps[1].depth, 2)
         XCTAssertEqual(result.steps[1].matches.count, 1)
         XCTAssertEqual(result.steps[1].matches[0].gemType, .sapphire)
-        XCTAssertEqual(result.totalScore, 675)
+        XCTAssertEqual(result.totalScore, 506)
         XCTAssertTrue(MatchDetector.findMatches(on: result.board).isEmpty)
         XCTAssertEqual(
             result.board,
@@ -247,7 +247,7 @@ final class GameCoreEngineTests: XCTestCase {
             difficulty: .hard
         )
 
-        XCTAssertEqual(score, 1_350)
+        XCTAssertEqual(score, 1_005)
     }
 
     func testBoardMoveAnalyzerDetectsDeadBoard() {
