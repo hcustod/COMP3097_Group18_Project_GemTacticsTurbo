@@ -3,6 +3,8 @@
 //  GemTacticsTurbo
 //
 //  Created by Henrique Custodio on 3/26/26.
+//  Author: Tyson Ward-Dicks - 101501186
+//  Changes: Updated auth routing between register, sign-in, guest flow, and home navigation.
 //
 
 import Combine
@@ -10,6 +12,7 @@ import Foundation
 
 @MainActor
 final class AppRouter: ObservableObject {
+    // Keeps auth screens and main app screens separate so the flow stays predictable.
     enum RootState {
         case launching
         case unauthenticated
@@ -81,11 +84,13 @@ final class AppRouter: ObservableObject {
             return
         }
 
+        // Reuse an existing screen in the stack instead of pushing duplicates.
         if let existingIndex = mainPath.firstIndex(of: screen) {
             mainPath = Array(mainPath.prefix(through: existingIndex))
             return
         }
 
+        // Only keep one active game screen in the nav stack.
         if case .game = screen, let existingGameIndex = mainPath.firstIndex(where: { pathScreen in
             if case .game = pathScreen {
                 return true
@@ -115,6 +120,7 @@ final class AppRouter: ObservableObject {
             return
         }
 
+        // Reset navigation when auth state changes so users do not keep stale screens.
         authPath.removeAll()
         mainPath.removeAll()
         rootState = newRootState

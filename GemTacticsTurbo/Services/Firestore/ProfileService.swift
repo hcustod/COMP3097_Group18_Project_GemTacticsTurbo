@@ -3,6 +3,8 @@
 //  GemTacticsTurbo
 //
 //  Created by Henrique Custodio on 3/26/26.
+//  Author: Tyson Ward-Dicks - 101501186
+//  Changes: Added local profile storage support for locally registered and guest users.
 //
 
 import FirebaseFirestore
@@ -30,6 +32,7 @@ final class ProfileService {
     }
 
     func fetchProfile(for user: AuthUser) async throws -> UserProfile? {
+        // Local builds read profiles from UserDefaults, backend builds read Firestore.
         if database == nil {
             return loadLocalProfile(uid: user.uid) ?? fallbackProfile(for: user)
         }
@@ -84,6 +87,7 @@ final class ProfileService {
 
     func updateProfile(_ profile: UserProfile) async throws {
         if database == nil {
+            // Save locally first so auth/profile flow works without cloud setup.
             saveLocalProfile(profile)
             notifyProfileDidUpdate(uid: profile.uid)
             return
@@ -175,6 +179,7 @@ final class ProfileService {
     }
 
     private func notifyProfileDidUpdate(uid: String) {
+        // Views use this to refresh after score/profile changes.
         NotificationCenter.default.post(
             name: Self.didUpdateProfileNotification,
             object: uid

@@ -3,6 +3,8 @@
 //  GemTacticsTurbo
 //
 //  Created by Henrique Custodio on 3/26/26.
+//  Author: Tyson Ward-Dicks - 101501186
+//  Changes: Added local account storage, sign-in/register handling, duplicate prevention, and guest/account session logic.
 //
 
 import Combine
@@ -11,6 +13,7 @@ import Foundation
 
 final class AuthService {
     static let shared = AuthService()
+    // Current build uses local accounts on purpose so auth works without backend setup.
     private static let prefersLocalAccounts = true
 
     private enum LocalKey {
@@ -34,6 +37,7 @@ final class AuthService {
         auth: Auth? = nil,
         defaults: UserDefaults = .standard
     ) {
+        // Firebase only boots if this flag is flipped back on later.
         let resolvedAuth = auth ?? ((FirebaseRuntime.isConfigured && !Self.prefersLocalAccounts) ? Auth.auth() : nil)
         self.auth = resolvedAuth
         self.defaults = defaults
@@ -61,6 +65,7 @@ final class AuthService {
         let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let auth else {
+            // Local fallback for this project build.
             let user = try signInLocalAccount(email: normalizedEmail, password: password)
             authStateSubject.send(user)
             return user
@@ -94,6 +99,7 @@ final class AuthService {
         let normalizedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let auth else {
+            // Local fallback registration so register/sign-in still works in demo builds.
             let user = try registerLocalAccount(
                 email: normalizedEmail,
                 password: password,
@@ -210,6 +216,7 @@ final class AuthService {
     }
 
     func observeAuthState() -> AnyPublisher<AuthUser?, Never> {
+        // RootView listens to this to swap between auth flow and main flow.
         authStateSubject
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -309,6 +316,7 @@ final class AuthService {
         let resolvedDisplayName = displayName.isEmpty ? normalizedEmail.components(separatedBy: "@").first ?? "Player" : displayName
         var accounts = loadLocalAccounts()
 
+        // Email is the unique key for local accounts.
         if accounts.contains(where: { Self.normalizeEmail($0.email) == normalizedEmail }) {
             throw AuthServiceError.emailAlreadyInUseLocal
         }

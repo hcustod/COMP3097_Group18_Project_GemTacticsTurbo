@@ -4,6 +4,7 @@ struct HomeView: View {
     @ObservedObject var router: AppRouter
 
     var body: some View {
+        // Home layout swaps between compact and full variants based on screen size.
         ScreenContainer(
             scrollEnabled: false,
             horizontalPadding: AppSpacing.medium,
@@ -73,6 +74,7 @@ struct HomeView: View {
     }
 
     private func homeActionDeck(compact: Bool) -> some View {
+        // Main menu actions all route through AppRouter from here.
         VStack(spacing: compact ? 9 : AppSpacing.small) {
             HomeHeroButton(
                 title: "Start Game",
@@ -138,6 +140,7 @@ struct HomeView: View {
     }
 
     private var playerStatusBadge: some View {
+        // Small status strip to show whether the session is guest or signed-in.
         HStack(spacing: 8) {
             Text(router.isGuest ? "GUEST MODE" : "PLAYER READY")
                 .font(AppTypography.hudLabel)

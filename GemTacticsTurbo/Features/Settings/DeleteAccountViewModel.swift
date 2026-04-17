@@ -3,6 +3,8 @@
 //  GemTacticsTurbo
 //
 //  Created by Henrique Custodio on 3/26/26.
+//  Author: Tyson Ward-Dicks - 101501186
+//  Changes: Updated delete-account flow for local accounts and local profile cleanup.
 //
 
 import Combine

@@ -10,6 +10,7 @@ import Foundation
 
 @MainActor
 final class GameViewModel: ObservableObject {
+    // Sent back to SpriteKit so the scene knows how to animate the attempted swap.
     struct SwapFeedback: Equatable {
         enum Outcome: Equatable {
             case ignored
@@ -93,6 +94,7 @@ final class GameViewModel: ObservableObject {
     }
 
     private func prepareBoardForNewRound(loadingMessage: String) async {
+        // Reset all round state here so restart and first load use the same path.
         stopTimer()
         boardPreparationRequestID += 1
         let requestID = boardPreparationRequestID
@@ -131,6 +133,7 @@ final class GameViewModel: ObservableObject {
     func attemptSwap(from: BoardPosition, to: BoardPosition) -> SwapFeedback {
         let swap = Swap(source: from, destination: to)
 
+        // Ignore input while the board is loading or the round is paused/finished.
         guard session.isActive, !isPreparingBoard else {
             return SwapFeedback(
                 swap: swap,
@@ -147,6 +150,7 @@ final class GameViewModel: ObservableObject {
             difficulty: difficulty
         )
 
+        // Invalid swaps keep the board the same and only update the status text.
         guard result.wasValid else {
             session.comboChain = 0
             statusMessage = "No match."
@@ -165,6 +169,7 @@ final class GameViewModel: ObservableObject {
         session.comboChain = result.comboChain
         totalMatchGroupsResolved += result.totalMatchGroups
 
+        // Short HUD text for normal matches vs combo chains.
         if result.comboChain > 1 {
             statusMessage = "Combo x\(result.comboChain)  +\(result.scoreGained)"
         } else {
@@ -243,6 +248,7 @@ final class GameViewModel: ObservableObject {
     }
 
     private func evaluateEndConditions() {
+        // Score win check comes first so a last move can still count as a win.
         if session.hasReachedTargetScore {
             endGame(
                 isWin: true,
@@ -273,6 +279,7 @@ final class GameViewModel: ObservableObject {
     }
 
     private func persistCompletedGameIfNeeded() {
+        // Only submit once even if multiple end conditions trigger close together.
         guard !hasSubmittedCompletedGame else {
             return
         }

@@ -44,6 +44,7 @@ enum Difficulty: String, CaseIterable, Hashable, Sendable, Codable {
     }
 
     var targetScore: Int {
+        // Raised a bit so wins do not happen in just one or two swaps.
         switch self {
         case .easy:
             return 4_000
@@ -55,6 +56,7 @@ enum Difficulty: String, CaseIterable, Hashable, Sendable, Codable {
     }
 
     var scoreMultiplier: Double {
+        // Higher modes still pay more per match even with harder score targets.
         switch self {
         case .easy:
             return 1.0

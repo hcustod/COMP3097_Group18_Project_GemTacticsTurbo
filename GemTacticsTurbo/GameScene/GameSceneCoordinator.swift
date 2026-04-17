@@ -32,6 +32,7 @@ final class GameSceneCoordinator: ObservableObject {
         let scene = GameScene(size: Self.sceneSize(for: board))
         self.scene = scene
         scene.render(board: board ?? GameSession.emptyBoard())
+        // SpriteKit sends swap requests here, then SwiftUI/GameViewModel decides the result.
         scene.onSwapRequested = { [weak self] swap in
             Task { @MainActor [weak self] in
                 self?.handleSwapRequest(swap)
@@ -50,6 +51,7 @@ final class GameSceneCoordinator: ObservableObject {
     }
 
     func render(board: GameSession.Board) {
+        // If an animation is mid-flight, wait and draw the newest board after it ends.
         if isAnimatingSwap {
             pendingBoard = board
             return
@@ -73,6 +75,7 @@ final class GameSceneCoordinator: ObservableObject {
             return
         }
 
+        // Ask the view model if the swap is valid before animating anything.
         let feedback = swapHandler(swap.source, swap.destination)
 
         guard feedback.wasProcessed else {
@@ -109,6 +112,7 @@ final class GameSceneCoordinator: ObservableObject {
     private func finishSwapAnimation(currentBoard: GameSession.Board?) {
         isAnimatingSwap = false
 
+        // Haptic style depends on whether the attempted swap actually matched.
         if hapticsEnabled() {
             switch pendingSwapHaptic {
             case .validMatch:
@@ -130,6 +134,7 @@ final class GameSceneCoordinator: ObservableObject {
     }
 
     private static func sceneSize(for board: GameSession.Board?) -> CGSize {
+        // Scene scales with board dimensions so tile spacing stays predictable.
         let rowCount = max(board?.count ?? GameSession.defaultRowCount, 1)
         let columnCount = max(board?.first?.count ?? GameSession.defaultColumnCount, 1)
         let baseCell: CGFloat = 140
