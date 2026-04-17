@@ -24,6 +24,8 @@ final class AppRouter: ObservableObject {
 
     enum MainScreen: Hashable {
         case home
+        case login
+        case register
         case howToPlay
         case gameMode
         case game(Difficulty)
@@ -48,13 +50,31 @@ final class AppRouter: ObservableObject {
     }
 
     func showLogin() {
-        authPath.removeAll()
-        rootState = .unauthenticated
+        switch rootState {
+        case .launching:
+            return
+        case .unauthenticated:
+            authPath = [.login]
+            rootState = .unauthenticated
+        case .authenticated:
+            return
+        case .guest:
+            showGuestAccountScreen(.login)
+        }
     }
 
     func showRegister() {
-        rootState = .unauthenticated
-        authPath = [.register]
+        switch rootState {
+        case .launching:
+            return
+        case .unauthenticated:
+            rootState = .unauthenticated
+            authPath.removeAll()
+        case .authenticated:
+            return
+        case .guest:
+            showGuestAccountScreen(.register)
+        }
     }
 
     func enterAuthenticatedHome() {
@@ -122,5 +142,24 @@ final class AppRouter: ObservableObject {
         authPath.removeAll()
         mainPath.removeAll()
         rootState = .unauthenticated
+    }
+
+    private func showGuestAccountScreen(_ screen: MainScreen) {
+        guard rootState == .guest else {
+            return
+        }
+
+        if let existingIndex = mainPath.firstIndex(of: screen) {
+            mainPath = Array(mainPath.prefix(through: existingIndex))
+            return
+        }
+
+        if let authScreenIndex = mainPath.firstIndex(where: { pathScreen in
+            pathScreen == .login || pathScreen == .register
+        }) {
+            mainPath = Array(mainPath.prefix(upTo: authScreenIndex))
+        }
+
+        mainPath.append(screen)
     }
 }

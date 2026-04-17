@@ -23,14 +23,16 @@ final class DeleteAccountViewModel: ObservableObject {
     @Published private(set) var isGuest = false
 
     private let authService: AuthService
+    private let profileService: ProfileService
 
-    init(authService: AuthService) {
+    init(authService: AuthService, profileService: ProfileService) {
         self.authService = authService
+        self.profileService = profileService
         refreshUserState()
     }
 
     convenience init() {
-        self.init(authService: .shared)
+        self.init(authService: .shared, profileService: ProfileService())
     }
 
     var canDelete: Bool {
@@ -62,7 +64,11 @@ final class DeleteAccountViewModel: ObservableObject {
         defer { isDeleting = false }
 
         do {
+            let deletedUID = authService.getCurrentUser()?.uid
             try await authService.deleteCurrentUser()
+            if let deletedUID {
+                profileService.deleteProfile(uid: deletedUID)
+            }
             errorMessage = nil
             return true
         } catch {

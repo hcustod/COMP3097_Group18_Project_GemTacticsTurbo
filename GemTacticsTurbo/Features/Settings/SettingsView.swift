@@ -72,13 +72,26 @@ struct SettingsView: View {
 
                         VStack(spacing: AppSpacing.stackTight) {
                             if router.isGuest {
-                                if let deletionMessage = sessionPresentation.settingsDeletionMessage {
-                                    InlineStatusMessage(message: deletionMessage)
+                                Text("Guest sessions stay lightweight. You can keep using one, or switch to a full account from here.")
+                                    .font(AppTypography.body)
+                                    .foregroundStyle(AppColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                PrimaryButton(title: "Create Account") {
+                                    router.showRegister()
+                                }
+
+                                SecondaryButton(title: "Sign In") {
+                                    router.showLogin()
                                 }
                             } else {
                                 PrimaryButton(title: "Delete Account") {
                                     router.show(.deleteAccount)
                                 }
+                            }
+
+                            if let deletionMessage = sessionPresentation.settingsDeletionMessage {
+                                InlineStatusMessage(message: deletionMessage)
                             }
 
                             SecondaryButton(title: "Home") {

@@ -36,7 +36,7 @@ final class LoginViewModel: ObservableObject {
     }
 
     var canSubmitLogin: Bool {
-        !isSubmitting && !isLocalOnlyMode
+        !isSubmitting
     }
 
     var canSubmitGuest: Bool {

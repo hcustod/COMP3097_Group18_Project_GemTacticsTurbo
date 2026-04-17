@@ -7,6 +7,7 @@
 
 import SpriteKit
 import SwiftUI
+import UIKit
 
 struct GameContainerView: View {
     @ObservedObject var router: AppRouter

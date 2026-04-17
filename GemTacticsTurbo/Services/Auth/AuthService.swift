@@ -11,9 +11,18 @@ import Foundation
 
 final class AuthService {
     static let shared = AuthService()
+    private static let prefersLocalAccounts = true
 
     private enum LocalKey {
-        static let session = "auth.localGuestSession"
+        static let session = "auth.localSession.v2"
+        static let accounts = "auth.localAccounts.v2"
+    }
+
+    private struct LocalAccount: Codable, Equatable {
+        let uid: String
+        let email: String
+        let password: String
+        let displayName: String
     }
 
     private let auth: Auth?
@@ -25,7 +34,7 @@ final class AuthService {
         auth: Auth? = nil,
         defaults: UserDefaults = .standard
     ) {
-        let resolvedAuth = auth ?? (FirebaseRuntime.isConfigured ? Auth.auth() : nil)
+        let resolvedAuth = auth ?? ((FirebaseRuntime.isConfigured && !Self.prefersLocalAccounts) ? Auth.auth() : nil)
         self.auth = resolvedAuth
         self.defaults = defaults
         let initialUser: AuthUser?
@@ -49,11 +58,13 @@ final class AuthService {
     }
 
     func signIn(email: String, password: String) async throws -> AuthUser {
-        guard let auth else {
-            throw AuthServiceError.firebaseUnavailable
-        }
-
         let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let auth else {
+            let user = try signInLocalAccount(email: normalizedEmail, password: password)
+            authStateSubject.send(user)
+            return user
+        }
 
         let result: AuthDataResult = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<AuthDataResult, Error>) in
             auth.signIn(withEmail: normalizedEmail, password: password) { result, error in
@@ -79,12 +90,18 @@ final class AuthService {
     }
 
     func register(email: String, password: String, displayName: String) async throws -> AuthUser {
-        guard let auth else {
-            throw AuthServiceError.firebaseUnavailable
-        }
-
         let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let auth else {
+            let user = try registerLocalAccount(
+                email: normalizedEmail,
+                password: password,
+                displayName: normalizedDisplayName
+            )
+            authStateSubject.send(user)
+            return user
+        }
 
         let result: AuthDataResult = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<AuthDataResult, Error>) in
             auth.createUser(withEmail: normalizedEmail, password: password) { result, error in
@@ -155,7 +172,17 @@ final class AuthService {
 
     func deleteCurrentUser() async throws {
         guard let auth else {
-            throw AuthServiceError.firebaseUnavailable
+            guard let currentUser = authStateSubject.value else {
+                throw AuthServiceError.noCurrentUser
+            }
+
+            guard !currentUser.isGuest else {
+                throw AuthServiceError.guestAccountDeletionUnavailable
+            }
+
+            try deleteLocalAccount(uid: currentUser.uid)
+            authStateSubject.send(nil)
+            return
         }
 
         guard let currentUser = auth.currentUser else {
@@ -179,7 +206,7 @@ final class AuthService {
     }
 
     var isRemoteAuthAvailable: Bool {
-        FirebaseRuntime.isConfigured && auth != nil
+        FirebaseRuntime.isConfigured && auth != nil && !Self.prefersLocalAccounts
     }
 
     func observeAuthState() -> AnyPublisher<AuthUser?, Never> {
@@ -190,6 +217,10 @@ final class AuthService {
     }
 
     func errorMessage(for error: Error) -> String {
+        if let authServiceError = error as? AuthServiceError {
+            return authServiceError.localizedDescription
+        }
+
         let nsError = error as NSError
         guard nsError.domain == AuthErrorDomain, let errorCode = AuthErrorCode(rawValue: nsError.code) else {
             return nsError.localizedDescription
@@ -222,7 +253,7 @@ final class AuthService {
     }
 
     private func loadOrCreateLocalGuestUser() -> AuthUser {
-        if let existingUser = Self.loadLocalSession(from: defaults) {
+        if let existingUser = Self.loadLocalSession(from: defaults), existingUser.isGuest {
             return existingUser
         }
 
@@ -251,6 +282,84 @@ final class AuthService {
 
     private func clearLocalSession() {
         persistLocalSession(nil)
+    }
+
+    private func signInLocalAccount(email: String, password: String) throws -> AuthUser {
+        let normalizedEmail = Self.normalizeEmail(email)
+        guard let account = loadLocalAccounts().last(where: { Self.normalizeEmail($0.email) == normalizedEmail }) else {
+            throw AuthServiceError.invalidLocalCredentials
+        }
+
+        guard account.password == password else {
+            throw AuthServiceError.invalidLocalCredentials
+        }
+
+        let user = AuthUser(
+            uid: account.uid,
+            email: account.email,
+            displayName: account.displayName,
+            isGuest: false
+        )
+        persistLocalSession(user)
+        return user
+    }
+
+    private func registerLocalAccount(email: String, password: String, displayName: String) throws -> AuthUser {
+        let normalizedEmail = Self.normalizeEmail(email)
+        let resolvedDisplayName = displayName.isEmpty ? normalizedEmail.components(separatedBy: "@").first ?? "Player" : displayName
+        var accounts = loadLocalAccounts()
+
+        if accounts.contains(where: { Self.normalizeEmail($0.email) == normalizedEmail }) {
+            throw AuthServiceError.emailAlreadyInUseLocal
+        }
+
+        let account = LocalAccount(
+            uid: UUID().uuidString,
+            email: normalizedEmail,
+            password: password,
+            displayName: resolvedDisplayName
+        )
+        accounts.append(account)
+        saveLocalAccounts(accounts)
+
+        let user = AuthUser(
+            uid: account.uid,
+            email: account.email,
+            displayName: account.displayName,
+            isGuest: false
+        )
+        persistLocalSession(user)
+        return user
+    }
+
+    private func deleteLocalAccount(uid: String) throws {
+        var accounts = loadLocalAccounts()
+        let originalCount = accounts.count
+        accounts.removeAll { $0.uid == uid }
+
+        guard accounts.count != originalCount else {
+            throw AuthServiceError.noCurrentUser
+        }
+
+        saveLocalAccounts(accounts)
+        clearLocalSession()
+    }
+
+    private func loadLocalAccounts() -> [LocalAccount] {
+        guard let data = defaults.data(forKey: LocalKey.accounts),
+              let accounts = try? JSONDecoder().decode([LocalAccount].self, from: data) else {
+            return []
+        }
+
+        return accounts
+    }
+
+    private func saveLocalAccounts(_ accounts: [LocalAccount]) {
+        guard let data = try? JSONEncoder().encode(accounts) else {
+            return
+        }
+
+        defaults.set(data, forKey: LocalKey.accounts)
     }
 
     private func updateDisplayName(_ displayName: String, for user: User) async throws {
@@ -286,11 +395,11 @@ final class AuthService {
             return nil
         }
 
-        guard let user = try? JSONDecoder().decode(AuthUser.self, from: data), user.isGuest else {
-            return nil
-        }
+        return try? JSONDecoder().decode(AuthUser.self, from: data)
+    }
 
-        return user
+    private static func normalizeEmail(_ email: String) -> String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
@@ -298,6 +407,9 @@ private enum AuthServiceError: LocalizedError {
     case missingUser
     case noCurrentUser
     case firebaseUnavailable
+    case invalidLocalCredentials
+    case emailAlreadyInUseLocal
+    case guestAccountDeletionUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -307,6 +419,12 @@ private enum AuthServiceError: LocalizedError {
             return "There is no currently signed-in user."
         case .firebaseUnavailable:
             return "Firebase is not configured for this build. Use guest mode to keep testing the app locally."
+        case .invalidLocalCredentials:
+            return "Invalid email or password."
+        case .emailAlreadyInUseLocal:
+            return "That email address is already in use."
+        case .guestAccountDeletionUnavailable:
+            return "Guest sessions do not have a permanent account to delete."
         }
     }
 }
