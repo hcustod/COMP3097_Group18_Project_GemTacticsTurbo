@@ -109,6 +109,9 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: settingsStore.musicEnabled) { _, isEnabled in
+            AudioManager.shared.refreshBackgroundMusic(enabled: isEnabled)
+        }
     }
 
     private func signOut() {

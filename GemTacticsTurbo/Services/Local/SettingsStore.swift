@@ -30,6 +30,12 @@ final class SettingsStore: ObservableObject {
         self.musicEnabled = defaults.object(forKey: Key.musicEnabled) as? Bool ?? true
         self.hapticsEnabled = defaults.object(forKey: Key.hapticsEnabled) as? Bool ?? true
     }
+
+    func resetToDefaults() {
+        soundEnabled = true
+        musicEnabled = true
+        hapticsEnabled = true
+    }
 }
 
 private enum Key {

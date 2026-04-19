@@ -16,6 +16,7 @@ final class GameSceneCoordinator: ObservableObject {
 
     private var swapHandler: ((BoardPosition, BoardPosition) -> GameViewModel.SwapFeedback)?
     private var hapticsEnabled: () -> Bool = { true }
+    private var soundEnabled: () -> Bool = { true }
     private var desiredInteractionState = true
     private var isAnimatingSwap = false
     private var pendingBoard: GameSession.Board?
@@ -26,7 +27,14 @@ final class GameSceneCoordinator: ObservableObject {
         case invalidSwap
     }
 
+    private enum PendingSwapSound {
+        case none
+        case validMatch
+        case invalidSwap
+    }
+
     private var pendingSwapHaptic: PendingSwapHaptic = .none
+    private var pendingSwapSound: PendingSwapSound = .none
 
     init(board: GameSession.Board? = nil) {
         let scene = GameScene(size: Self.sceneSize(for: board))
@@ -47,6 +55,10 @@ final class GameSceneCoordinator: ObservableObject {
 
     func configureHapticsEnabled(_ provider: @escaping () -> Bool) {
         hapticsEnabled = provider
+    }
+
+    func configureSoundEnabled(_ provider: @escaping () -> Bool) {
+        soundEnabled = provider
     }
 
     func render(board: GameSession.Board) {
@@ -84,7 +96,9 @@ final class GameSceneCoordinator: ObservableObject {
         scene.isBoardInteractionEnabled = false
 
         if feedback.wasValid {
+            AudioManager.shared.playEffect(.swap, enabled: soundEnabled())
             pendingSwapHaptic = .validMatch
+            pendingSwapSound = .validMatch
             scene.animateValidSwap(
                 swap,
                 swappedBoard: feedback.swappedBoard ?? feedback.resultingBoard,
@@ -99,6 +113,7 @@ final class GameSceneCoordinator: ObservableObject {
         }
 
         pendingSwapHaptic = .invalidSwap
+        pendingSwapSound = .invalidSwap
         scene.animateInvalidSwap(swap) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.finishSwapAnimation(currentBoard: nil)
@@ -119,7 +134,18 @@ final class GameSceneCoordinator: ObservableObject {
                 break
             }
         }
+
+        switch pendingSwapSound {
+        case .validMatch:
+            AudioManager.shared.playEffect(.match, enabled: soundEnabled())
+        case .invalidSwap:
+            AudioManager.shared.playEffect(.invalid, enabled: soundEnabled())
+        case .none:
+            break
+        }
+
         pendingSwapHaptic = .none
+        pendingSwapSound = .none
 
         if let pendingBoard, pendingBoard != currentBoard {
             scene.render(board: pendingBoard)
