@@ -1,3 +1,6 @@
+// Author: Tyson Ward-Dicks - 101501186
+// Changes: Updated register screen flow, guest option, and redirect to sign-in after account creation.
+
 import SwiftUI
 
 struct RegisterView: View {

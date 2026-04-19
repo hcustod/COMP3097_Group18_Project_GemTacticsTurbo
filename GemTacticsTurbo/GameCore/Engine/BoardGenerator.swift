@@ -16,6 +16,7 @@ enum BoardGenerator {
     static let minimumPlayableSwaps = 2
     static let maximumPlayableBoardAttempts = 256
 
+    // Default board generation path for actual gameplay.
     static func generate(
         rows: Int = GameSession.defaultRowCount,
         columns: Int = GameSession.defaultColumnCount
@@ -47,6 +48,7 @@ enum BoardGenerator {
             columns: columns,
             using: &gemSource
         )
+        // Keep the best fallback board in case all attempts still miss the threshold.
         var fallbackSwapCount = BoardMoveAnalyzer.countValidSwaps(
             on: fallbackBoard,
             upTo: requiredSwaps
@@ -93,6 +95,7 @@ enum BoardGenerator {
         maximumAttempts: Int = maximumPlayableBoardAttempts,
         using gemSource: inout Source
     ) -> RepairResult {
+        // Rebuild the board only when the current one is too close to dead.
         let requiredSwaps = max(1, minimumValidSwaps)
         let currentSwapCount = BoardMoveAnalyzer.countValidSwaps(
             on: board,
@@ -164,6 +167,7 @@ enum BoardGenerator {
         on board: GameSession.Board,
         using gemSource: inout Source
     ) -> GemType {
+        // Try random gems first, then fall back to any safe gem if needed.
         let maximumAttempts = GemType.allCases.count * 4
 
         for _ in 0..<maximumAttempts {

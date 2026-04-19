@@ -6,6 +6,7 @@
 //
 
 enum CascadeResolver {
+    // One step = matches found at a single cascade depth.
     struct Step: Equatable, Sendable {
         let depth: Int
         let matches: [Match]
@@ -21,6 +22,7 @@ enum CascadeResolver {
         let steps: [Step]
         let totalScore: Int
 
+        // Combo count is just how many cascade waves happened.
         var comboChain: Int {
             steps.count
         }
@@ -55,6 +57,7 @@ enum CascadeResolver {
         var steps: [Step] = []
         var cascadeDepth = 1
 
+        // Keep resolving until no more automatic matches exist.
         while true {
             let matches = MatchDetector.findMatches(on: workingBoard)
 
@@ -116,6 +119,7 @@ enum CascadeResolver {
             return board
         }
 
+        // Collapse each column downward after matched gems are removed.
         let rowCount = board.count
         let columnCount = board.first?.count ?? 0
         var updatedBoard = board
@@ -153,6 +157,7 @@ enum CascadeResolver {
             return board
         }
 
+        // Fill only the empty slots left after gravity.
         let rowCount = board.count
         let columnCount = board.first?.count ?? 0
         var updatedBoard = board

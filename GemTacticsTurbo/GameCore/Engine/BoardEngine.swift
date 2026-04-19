@@ -14,6 +14,7 @@ protocol BoardEngineing {
     ) -> BoardEngine.MoveResult
 }
 
+// Main board pipeline: validate swap -> resolve cascades -> repair dead boards if needed.
 struct BoardEngine: BoardEngineing, Sendable {
     struct MoveResult: Equatable, Sendable {
         let board: GameSession.Board
@@ -72,6 +73,7 @@ struct BoardEngine: BoardEngineing, Sendable {
         on board: GameSession.Board,
         difficulty: Difficulty
     ) -> MoveResult {
+        // Invalid swaps are rejected before any board mutation happens.
         guard SwapValidator.isValid(swap, on: board) else {
             return MoveResult(
                 board: board,
@@ -87,6 +89,7 @@ struct BoardEngine: BoardEngineing, Sendable {
             board: swappedBoard,
             difficulty: difficulty
         )
+        // After cascades finish, make sure the next board still has playable swaps.
         let playabilityRepair = BoardGenerator.repairPlayability(
             for: cascadeResult.board
         )

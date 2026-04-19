@@ -6,6 +6,7 @@
 //
 
 enum ScoreCalculator {
+    // Slightly reduced from the original values to make rounds last longer.
     static let basePointsPerGem = 75
     static let extraMatchBonusPerGem = 35
     static let comboStepMultiplier = 0.25
@@ -15,6 +16,7 @@ enum ScoreCalculator {
         cascadeDepth: Int,
         difficulty: Difficulty
     ) -> Int {
+        // Total score = match value * combo bonus * difficulty bonus.
         let baseScore = matches.reduce(0) { partialResult, match in
             partialResult + score(for: match)
         }

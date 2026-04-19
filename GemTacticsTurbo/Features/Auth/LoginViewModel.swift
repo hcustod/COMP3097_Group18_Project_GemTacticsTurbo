@@ -1,9 +1,5 @@
-//
-//  LoginViewModel.swift
-//  GemTacticsTurbo
-//
-//  Created by Henrique Custodio on 3/26/26.
-//
+// Author: Tyson Ward-Dicks - 101501186
+// Changes: Adjusted local sign-in flow and auth validation behavior.
 
 import Combine
 import Foundation

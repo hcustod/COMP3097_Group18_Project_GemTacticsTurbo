@@ -3,6 +3,8 @@
 //  GemTacticsTurbo
 //
 //  Created by Henrique Custodio on 3/26/26.
+//  Author: Tyson Ward-Dicks - 101501186
+//  Changes: Updated startup auth flow so users begin at register and auth state routes correctly.
 //
 
 import SwiftUI
@@ -16,6 +18,7 @@ struct RootView: View {
 
     var body: some View {
         Group {
+            // Root switch for launch -> auth -> main game flow.
             switch router.rootState {
             case .launching:
                 LaunchingPlaceholderView()
@@ -48,6 +51,7 @@ struct RootView: View {
     }
 
     private func bootstrapSession() async {
+        // Guests always restart at auth so the demo flow starts on register.
         if let currentUser = authService.getCurrentUser() {
             if currentUser.isGuest {
                 try? authService.signOut()
@@ -94,6 +98,7 @@ private struct UnauthenticatedFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.authPath) {
+            // Register is the default entry screen, login is pushed from here.
             RegisterView(router: router)
                 .navigationDestination(for: AppRouter.AuthScreen.self) { screen in
                     switch screen {
@@ -112,6 +117,7 @@ private struct MainFlowView: View {
 
     var body: some View {
         NavigationStack(path: $router.mainPath) {
+            // Home is the main root once auth is done.
             HomeView(router: router)
                 .navigationDestination(for: AppRouter.MainScreen.self) { screen in
                     switch screen {

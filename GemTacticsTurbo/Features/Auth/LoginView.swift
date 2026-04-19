@@ -1,3 +1,6 @@
+// Author: Tyson Ward-Dicks - 101501186
+// Changes: Updated sign-in screen flow, wording, and inline auth action styling.
+
 import SwiftUI
 
 struct LoginView: View {
