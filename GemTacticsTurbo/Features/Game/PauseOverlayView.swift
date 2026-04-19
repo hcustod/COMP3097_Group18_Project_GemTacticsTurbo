@@ -1,0 +1,45 @@
+//
+//  PauseOverlayView.swift
+//  GemTacticsTurbo
+//
+//  Created by Henrique Custodio on 3/26/26.
+//
+
+import SwiftUI
+
+struct PauseOverlayView: View {
+    let onResume: () -> Void
+    let onRestart: () -> Void
+    let onQuit: () -> Void
+
+    var body: some View {
+        VStack(spacing: AppSpacing.large) {
+            Text("Paused")
+                .font(AppTypography.screenTitle)
+                .foregroundStyle(AppColors.textPrimary)
+
+            PrimaryButton(title: "Resume") {
+                onResume()
+            }
+
+            SecondaryButton(title: "Restart") {
+                onRestart()
+            }
+
+            SecondaryButton(title: "Home") {
+                onQuit()
+            }
+        }
+        .padding(AppSpacing.large)
+        .frame(maxWidth: 340)
+        .background(
+            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
+                .fill(AppColors.backgroundGradient)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppSpacing.cornerRadius, style: .continuous)
+                .stroke(AppColors.stroke, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.22), radius: 16, y: 8)
+    }
+}
