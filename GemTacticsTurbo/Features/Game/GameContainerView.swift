@@ -113,6 +113,7 @@ struct GameContainerView: View {
         }
         .onAppear {
             sceneCoordinator.configureHapticsEnabled { settingsStore.hapticsEnabled }
+            sceneCoordinator.configureSoundEnabled { settingsStore.soundEnabled }
             sceneCoordinator.configureSwapHandler { from, to in
                 viewModel.attemptSwap(from: from, to: to)
             }
@@ -120,9 +121,17 @@ struct GameContainerView: View {
             sceneCoordinator.setInteractionEnabled(
                 viewModel.session.isActive && !viewModel.isPreparingBoard
             )
+
+            AudioManager.shared.startBackgroundMusic(enabled: settingsStore.musicEnabled)
         }
         .onChange(of: settingsStore.hapticsEnabled) { _, _ in
             sceneCoordinator.configureHapticsEnabled { settingsStore.hapticsEnabled }
+        }
+        .onChange(of: settingsStore.soundEnabled) { _, _ in
+            sceneCoordinator.configureSoundEnabled { settingsStore.soundEnabled }
+        }
+        .onChange(of: settingsStore.musicEnabled) { _, isEnabled in
+            AudioManager.shared.refreshBackgroundMusic(enabled: isEnabled)
         }
         .task {
             await viewModel.prepareInitialBoardIfNeeded()
@@ -139,12 +148,25 @@ struct GameContainerView: View {
             sceneCoordinator.setInteractionEnabled(
                 viewModel.session.isActive && !viewModel.isPreparingBoard
             )
-            if isGameOver, settingsStore.hapticsEnabled {
+            guard isGameOver else {
+                AudioManager.shared.refreshBackgroundMusic(enabled: settingsStore.musicEnabled)
+                return
+            }
+
+            AudioManager.shared.stopBackgroundMusic()
+
+            if settingsStore.hapticsEnabled {
                 if viewModel.session.isWin {
                     HapticsManager.notification(.success)
                 } else {
                     HapticsManager.notification(.error)
                 }
+            }
+
+            if viewModel.session.isWin {
+                AudioManager.shared.playEffect(.win, enabled: settingsStore.soundEnabled)
+            } else {
+                AudioManager.shared.playEffect(.lose, enabled: settingsStore.soundEnabled)
             }
         }
         .onChange(of: viewModel.isPreparingBoard) { _, _ in
@@ -154,6 +176,7 @@ struct GameContainerView: View {
         }
         .onDisappear {
             sceneCoordinator.setInteractionEnabled(false)
+            AudioManager.shared.stopBackgroundMusic()
         }
     }
 
@@ -244,6 +267,9 @@ struct GameContainerView: View {
                     )
                     .frame(height: rowHeight)
 
+                    compactMusicButton()
+                        .frame(width: compact ? 46 : 52, height: rowHeight)
+
                     compactPauseButton()
                         .frame(width: compact ? 46 : 52, height: rowHeight)
                 }
@@ -299,11 +325,33 @@ struct GameContainerView: View {
 
                 Spacer(minLength: 0)
 
-                compactPauseButton()
-                    .frame(height: compact ? 58 : 62)
+                VStack(spacing: compact ? 8 : AppSpacing.small) {
+                    compactMusicButton()
+                        .frame(height: compact ? 58 : 62)
+
+                    compactPauseButton()
+                        .frame(height: compact ? 58 : 62)
+                }
             }
             .padding(compact ? 8 : AppSpacing.small)
         }
+    }
+
+    private func compactMusicButton() -> some View {
+        Button {
+            AudioManager.shared.playEffect(.click, enabled: settingsStore.soundEnabled)
+            settingsStore.musicEnabled.toggle()
+        } label: {
+            Image(systemName: settingsStore.musicEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                .font(.title3)
+                .foregroundStyle(AppColors.textPrimary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    ArcadeMiniButtonSurface()
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(settingsStore.musicEnabled ? "Turn music off" : "Turn music on")
     }
 
     private func compactPauseButton() -> some View {
