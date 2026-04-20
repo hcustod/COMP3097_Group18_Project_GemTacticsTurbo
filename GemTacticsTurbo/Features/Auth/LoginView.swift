@@ -139,14 +139,14 @@ struct AuthInlineActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            (
+            HStack(spacing: 0) {
                 Text(leadingText)
                     .foregroundStyle(isEnabled ? AppColors.textSecondary : AppColors.textMuted)
-                +
+
                 Text(actionText)
                     .foregroundStyle(isEnabled ? AppColors.arcadePanelGlow : AppColors.textMuted)
                     .underline(true, color: isEnabled ? AppColors.arcadePanelGlow : AppColors.textMuted)
-            )
+            }
                 .font(AppTypography.label)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, AppSpacing.xSmall)

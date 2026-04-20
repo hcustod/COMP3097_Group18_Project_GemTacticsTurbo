@@ -69,7 +69,7 @@ final class DeleteAccountViewModel: ObservableObject {
             let deletedUID = authService.getCurrentUser()?.uid
             try await authService.deleteCurrentUser()
             if let deletedUID {
-                profileService.deleteProfile(uid: deletedUID)
+                await profileService.deleteProfile(uid: deletedUID)
             }
             errorMessage = nil
             return true

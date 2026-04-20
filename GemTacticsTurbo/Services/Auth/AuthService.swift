@@ -13,8 +13,6 @@ import Foundation
 
 final class AuthService {
     static let shared = AuthService()
-    // Current build uses local accounts on purpose so auth works without backend setup.
-    private static let prefersLocalAccounts = true
 
     private enum LocalKey {
         static let session = "auth.localSession.v2"
@@ -37,8 +35,8 @@ final class AuthService {
         auth: Auth? = nil,
         defaults: UserDefaults = .standard
     ) {
-        // Firebase only boots if this flag is flipped back on later.
-        let resolvedAuth = auth ?? ((FirebaseRuntime.isConfigured && !Self.prefersLocalAccounts) ? Auth.auth() : nil)
+        // Prefer Firebase when configured, but keep local auth as the fallback path.
+        let resolvedAuth = auth ?? (FirebaseRuntime.isConfigured ? Auth.auth() : nil)
         self.auth = resolvedAuth
         self.defaults = defaults
         let initialUser: AuthUser?
@@ -212,7 +210,7 @@ final class AuthService {
     }
 
     var isRemoteAuthAvailable: Bool {
-        FirebaseRuntime.isConfigured && auth != nil && !Self.prefersLocalAccounts
+        FirebaseRuntime.isConfigured && auth != nil
     }
 
     func observeAuthState() -> AnyPublisher<AuthUser?, Never> {

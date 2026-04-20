@@ -51,14 +51,7 @@ struct RootView: View {
     }
 
     private func bootstrapSession() async {
-        // Guests always restart at auth so the demo flow starts on register.
         if let currentUser = authService.getCurrentUser() {
-            if currentUser.isGuest {
-                try? authService.signOut()
-                router.applyAuthState(nil)
-                return
-            }
-
             router.applyAuthState(currentUser)
             return
         }

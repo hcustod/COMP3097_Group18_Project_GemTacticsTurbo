@@ -150,8 +150,22 @@ final class ProfileService {
         }
     }
 
-    func deleteProfile(uid: String) {
+    func deleteProfile(uid: String) async {
+        if let database {
+            try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                database.collection(collectionName).document(uid).delete { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                        return
+                    }
+
+                    continuation.resume(returning: ())
+                }
+            }
+        }
+
         defaults.removeObject(forKey: localProfileKey(for: uid))
+        notifyProfileDidUpdate(uid: uid)
     }
 
     private func loadLocalProfile(uid: String) -> UserProfile? {
